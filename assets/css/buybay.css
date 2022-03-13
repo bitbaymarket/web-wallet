@@ -1,0 +1,140 @@
+
+/* redemption bb-form */
+.help-block.with-errors {
+  color: #ff5050;
+  margin-top: 2px;
+  min-height: 13px;
+  font-size: 13px;
+  line-height: 13px;
+}
+.help-block.with-errors ul {
+  list-style: none;  
+  padding-left: 0px;
+  margin: 0;
+}
+.d-none {
+  display: none;
+}
+.bb-form .likeinput,
+.bb-form select,
+.bb-form input {
+  border: 1px solid #ccc;
+  padding: 8px;
+  width: 100%;
+  background: white;
+  border-radius: 0px;
+}
+.bb-form .likeinput,
+.bb-form input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+.bb-form select {
+  padding: 9px;
+}
+
+#wallet label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.bb-form .button {
+  padding: 13px 60px;
+  cursor: pointer;
+  width: auto;
+  border: 0px solid #ccc;
+  background-color: #ffd402;
+  font-weight: 500;
+  -webkit-transition: box-shadow 260ms ease;
+  transition: box-shadow 260ms ease;  
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+.button:hover {
+  box-shadow: 6px 6px 0 0 rgba(0, 0, 0, .14);
+}
+.bb-form .form-group {
+  margin: 10px auto;
+}
+.bb-form form {
+  bbackground-color: #fafafa;
+  ppadding: 10px;
+  mmargin: 10px;
+  text-align: left;
+}
+@media (min-width: 450px) {
+  .bb-form form {
+    padding: 0px;
+  }
+}
+@media (min-width: 767px) {
+  .bb-form form {
+    ppadding: 30px;
+  }
+}
+.bb-form .form-action {
+  padding: 20px 20px;
+  text-align: center;
+}
+.bb-form .description {
+  color: #939596;
+  font-size: 14px;
+  margin: 0;
+}
+.bb-form .messages .alert {
+  margin: 20px 30px;
+  padding: 15px;
+  background: #ffbbbb;
+}
+.bb-form form .messages .alert {
+  margin: 0px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.bb-form .messages .alert-success {
+  background: #d2efa7;
+}
+.bb-form .messages button {
+  margin-right: 10px;
+  background: none !important;
+	font-size: 20px;
+}
+.bb-form label img {
+  height: 15px;
+  margin: 0px 0px 3px 6px;  
+}
+.bb-form .center {
+  text-align: center;
+}
+.bb-form .middle {
+  margin: 0 auto;
+  float: none;
+}
+.bb-form .required_field {
+	font-weight: 400;
+	color: red;
+}
+.rightsmall {
+  float: right;
+  width: 100px;
+  margin-left: 15px;
+}
+.leftfloat {
+  overflow: hidden;
+}
+
+/* indacoin */
+input#debug {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+}
+pre {
+  display:none;
+} 
+input#debug:checked ~ pre {
+  display: block;
+}
