@@ -436,9 +436,8 @@ $(document).ready(function() {
 					*/
           
           
-					reset_broadcast_progress_bar();
-          return ; //icee
-	
+          reset_broadcast_progress_bar();
+          
 					// and finally broadcast!
 					tx2.broadcast(function(data){
 						if (debug) {					
