@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,900');
+@import 'fonts/pangram-sans-rounded/styles.css';
 
 html {
 	height: 100%;
@@ -9,14 +9,15 @@ body {
 	padding-bottom: 200px;
   min-height: 100%;
   position: relative;
-	font-family: 'Roboto', sans-serif;
+	font-family:PP Pangram Sans Rounded Fixed,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;
+
 	padding-top: 120px;
 }
 * {
   border-radius: 5px !important;
 }
 h1,h2,h3,h4,h5,h6 {
-	font-family: 'Roboto', sans-serif;	
+	font-family: unset;
 }
 
 #wrap {
@@ -865,7 +866,7 @@ body.loggedin {
 	margin-top: 0px;
 }
 #walletKeys input {
-	margin-bottom: 10px;
+	/*margin-bottom: 10px;*/
 }
 #walletKeys .share-yes {
 	display: none;

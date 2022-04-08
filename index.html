@@ -57,6 +57,8 @@
   <script type="text/javascript" src="js/bootstrap.min.js"></script>
   <script type="text/javascript" src="js/bootstrap-datetimepicker.min.js"></script>
 
+  
+
   <script type="text/javascript" src="js/crypto-min.js"></script>
   <script type="text/javascript" src="js/crypto-sha256.js"></script>
   <script type="text/javascript" src="js/crypto-sha256-hmac.js"></script>
@@ -73,8 +75,11 @@
 
   <!-- <script type="text/javascript" src="https://wallet.bitbay.market/servers.js?v=1.12"></script> !-->
   <script type="text/javascript" src="assets/js/nanobar.js"></script>
-  <script type="text/javascript" src="js/coin.js?v=1.12"></script>
-  <script type="text/javascript" src="js/coinbin.js?v=1.12"></script>
+
+
+  <script type="text/javascript" src="js/bip39.js"></script>
+  <script type="text/javascript" src="js/coin.js?v=1.135"></script>
+  <script type="text/javascript" src="js/coinbin.js?v=1.135"></script>
 
   <script type="text/javascript" src="assets/js/bootstrap-select.min.js"></script>
   <script type="text/javascript" src="assets/js/html5storage/HTML5.sessionStorage.js"></script>
@@ -95,7 +100,7 @@
               </a>
               <ul class="dropdown-menu">
                 <li class="loginhide active"><a href="#wallet" data-toggle="tab">Regular Wallet</a></li>
-                <li class="loginhide"><a href="#wallet" data-toggle="tab" id="multisigwalletLink">Individual MultiSig Wallet</a></li>
+                <li class="loginhide"><a href="#wallet" data-toggle="tab" id="multisigwalletLink">MultiSig Wallet</a></li>
                 <li class="logouthide">
                   <a href="#wallet" data-toggle="tab">Wallet
 											<p class="text-left small walletEmail"></p>
@@ -108,10 +113,17 @@
                 <li class="hidden"><a href="#newAddress" data-toggle="tab">New Address</a></li>
                 <li><a href="#newTimeLocked" data-toggle="tab">Time Locked Address</a></li>
                 <li><a href="#newMultiSig" data-toggle="tab">MultiSig Address</a></li>
+                <li><a href="#newHDaddress" data-toggle="tab">HD Address</a></li>
+                <li><a href="#newMnemonicaddress" data-toggle="tab">Mnemonic Address</a></li>
+                
+                <li class="divider-text"></li>
                 <li><a href="#verify" data-toggle="tab">Verify</a></li>
                 <li><a href="#newTransaction" data-toggle="tab">Transaction</a></li>
                 <li><a href="#sign" data-toggle="tab">Sign</a></li>
                 <li><a href="#broadcast" data-toggle="tab">Broadcast</a></li>
+                <!-- <li class="divider-text"></li>
+                <li><a href="#signMsg" data-toggle="tab">Sign Message</a></li>
+                <li><a href="#verifyMsg" data-toggle="tab">Verify Message</a></li> -->
                 <li class="divider-text"></li>
                 <li><a href="#help" data-toggle="tab">Help - F.A.Q. </a></li>
                 <li class="divider-text logouthide"></li>
@@ -171,8 +183,8 @@
           <div class="col-md-4 col-sm-4 col-xs-6">
             <div class="panel panel-default">
               <div class="panel-body pegIndex">
-                <h4 title="Peg index: seems to go up lately..."><span class="glyphicon glyphicon-scale"></span> <span id="currentPegIndex"><span class="glyphicon glyphicon-repeat glyphicon-spin"></span></span> <span class="glyphicon glyphicon-arrow-right"></span></h4>
-                <p id="nextPegIndex">Next Peg index is 0</p> 
+                <h4 title="Peg index: seems to go up lately..."><span class="glyphicon glyphicon-scale"></span> <span class="currentPegIndex"><span class="glyphicon glyphicon-repeat glyphicon-spin"></span></span> <span class="glyphicon glyphicon-arrow-right"></span></h4>
+                <p class="nextPegIndex">Next Peg index is 0</p> 
               </div>
               
             </div>
@@ -194,45 +206,7 @@
     </div>
     </div>
 
-    <!-- Network topPanel-->
-    <div class="row topPanel networkTopPanel hidden">
-        <div class="col-md-12 ">
-        <div class="row">
-          <div class="bs-component">
-        
-          <div class="col-md-4 col-sm-4 col-xs-12">
-            <div class="panel panel-default">
-              <div class="panel-body coinPrice">
-                  <p><span class="glyphicon glyphicon-briefcase"></span> Price (Ratedb - Github)</p>
-                  <div class="coin_price"><h4><span class="glyphicon glyphicon-repeat glyphicon-spin"></span></h4><p class="price_track"></p></div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="col-md-4 col-sm-4 col-xs-6">
-            <div class="panel panel-default">
-              <div class="panel-body blockHeight">
-                <h4 ><span class=" glyphicon glyphicon-cloud"></span> <span id="currentBlockHeight"><span class="glyphicon glyphicon-repeat glyphicon-spin"></span></span> </h4>
-                <p id="nextPegIndex">Blocks in chain</p> 
-              </div>
-              
-            </div>
-          </div>
-          <div class="col-md-4 col-sm-4 col-xs-6">
-            <div class="panel panel-default">
-              <div class="panel-body pegCycle">
-                <h4 title="Peg cycle"><span class="glyphicon glyphicon-refresh"></span> <span id="pegCycleId"><span class="glyphicon glyphicon-repeat glyphicon-spin"></span></span></h4>
-                <p title="A total of 0 Peg cycles has happened" >Peg cycle</p> 
-              </div>
-              
-            </div>
-          </div>
-          
-          
-        </div>
-      </div>
-    </div>
-    </div>
+
       
       <div class="tab-content">
 
@@ -259,33 +233,79 @@
                           <option value="multisig">Multisig 2-of-2</option>
                         </select>
                       </div>
+<!--
+                      <div class="form-group form-openWalletTypeText">
+                        Regular Wallet
+                      </div>
+
+  m-of-n multisig login, deprecated for now
+<div class="form-group ">
+  <select id="multisigWalletMnumber">
+    <option>1</option>
+    <option selected>2</option>
+    <option>3</option>
+    <option>4</option>
+    <option>5</option>
+    <option>6</option>
+    <option>7</option>
+    <option>8</option>
+    <option>9</option>
+    <option>10</option>
+    <option>11</option>
+    <option>12</option>
+    <option>13</option>
+    <option>14</option>
+    <option>15</option>
+    <option>16</option>
+  </select>
+  
+  <select id="multisigWalletNnumber">
+    <option>1</option>
+    <option selected>2</option>
+    <option>3</option>
+    <option>4</option>
+    <option>5</option>
+    <option>6</option>
+    <option>7</option>
+    <option>8</option>
+    <option>9</option>
+    <option>10</option>
+    <option>11</option>
+    <option>12</option>
+    <option>13</option>
+    <option>14</option>
+    <option>15</option>
+    <option>16</option>
+  </select>
+</div>
+-->
 
                       <div class="form-group form-email">
-                        <input id="openEmail" type="email" class="form-control confirm-email" placeholder="Email Address" required autofocus>
+                        <input id="openEmail" name="openEmail" type="email" class="form-control confirm-email" placeholder="Email Address" required autofocus>
                       </div>
                       <div class="form-group form-email-confirm">
-                        <input id="openEmail-confirm" type="email" class="form-control confirm-input" placeholder="Email Address Confirm" confirm="#openEmail">
+                        <input id="openEmail-confirm" name="openEmail-confirm" type="email" class="form-control confirm-input" placeholder="Email Address Confirm" confirm="#openEmail">
                       </div>
                       <div class="form-group input-group form-password">
-                        <input id="openPass" type="password" class="form-control" placeholder="Password" required>
+                        <input id="openPass" name="openPass" type="password" class="form-control" placeholder="Password" required>
                         <span class="input-group-btn">
 														<button class="showKey btn btn-default" type="button">Show</button>
 													</span>
                       </div>
                       <div class="form-group input-group form-password-confirm">
-                        <input id="openPass-confirm" type="password" class="form-control confirm-input" placeholder="Password Confirm" confirm="#openPass">
+                        <input id="openPass-confirm" name="openPass-confirm" type="password" class="form-control confirm-input" placeholder="Password Confirm" confirm="#openPass">
                         <span class="input-group-btn">
 														<button class="showKey btn btn-default" type="button">Show</button>
 													</span>
                       </div>
                       <div class="form-group input-group form-password2 hidden">
-                        <input id="openPass2" type="password" class="form-control" placeholder="Password2">
+                        <input id="openPass2" name="openPass" type="password" class="form-control" placeholder="Password2">
                         <span class="input-group-btn">
 														<button class="showKey btn btn-default" type="button">Show</button>
 													</span>
                       </div>
                       <div class="form-group input-group form-password2-confirm hidden">
-                        <input id="openPass2-confirm" type="password" class="form-control confirm-input" placeholder="Password2 Confirm" confirm="#openPass2">
+                        <input id="openPass2-confirm" name="openPass-confirm" type="password" class="form-control confirm-input" placeholder="Password2 Confirm" confirm="#openPass2">
                         <span class="input-group-btn">
 														<button class="showKey btn btn-default" type="button">Show</button>
 													</span>
@@ -299,7 +319,7 @@
                       </div>
                       
                       <div class="form-group form-accept checkbox">
-                        <p class="underterms">No email/password is stored on our server. If you forget your email or password it CANNOT be recovered! You can print/backup your wallet after you login.</p>
+                        <p class="alert alert-danger">No email/password is stored on our server. If you forget your email or password it CANNOT be recovered! You can print/backup your wallet after you login.</p>
                         
                         <label for="acceptTerms">
                           <input id="acceptTerms" type="checkbox"> I have read the <a href="#disclaimer" role="button" class="btn-flat" data-toggle="modal">disclaimer</a> and have stored my login information
@@ -409,6 +429,8 @@
                               </ul>
                             </li>
                           </ul>
+
+
                           <div class="tab-content" id="WalletTabContent">
                             <div class="tab-pane fade" id="walletBackup">
                               <div class="backuptext">
@@ -450,6 +472,7 @@
 																			</span>
                                   </div>
 
+                                  <!-- 
                                   <label class="wallet_maybe_multisig_keys hide">AES-256 Encrypted WIF key (Private - Don't share)</label>
                                   <div class="input-group wallet_maybe_multisig_keys hide">
                                     <input class="form-control privkeyaes" type="password" readonly>
@@ -463,6 +486,8 @@
 																				<button class="showKey btn btn-default" type="button">Show</button>
 																			</span>
                                   </div>
+                                -->
+
                                 </div>
                               </div>
                               <div class="walletnotice">
@@ -912,7 +937,7 @@
           <div class="input-group">
             <input id="newHDxpub" type="text" class="form-control" value="" readonly>
             <span class="input-group-btn">
-								<button class="deriveHDbtn btn btn-default" type="button"><span title="Derive from key" class="glyphicon glyphicon-chevron-right"></span></button>
+                <button class="deriveHDbtn btn btn-default" type="button"><span title="Derive from key" class="glyphicon glyphicon-chevron-right"></span></button>
             </span>
           </div>
 
@@ -920,7 +945,7 @@
           <div class="input-group">
             <input id="newHDxprv" type="text" class="form-control" value="" readonly>
             <span class="input-group-btn">
-								<button class="deriveHDbtn btn btn-default" type="button"><span title="Derive from key" class="glyphicon glyphicon-chevron-right"></span></button>
+                <button class="deriveHDbtn btn btn-default" type="button"><span title="Derive from key" class="glyphicon glyphicon-chevron-right"></span></button>
             </span>
           </div>
 
@@ -935,6 +960,62 @@
 
           <input type="button" class="btn-flatbay " value="Generate" id="newHDKeysBtn">
         </div>
+
+        <!-- Mnemonic Address -->
+        <div class="tab-pane tab-content" id="newMnemonicaddress">
+          <h2>New Mnemonic Address <small>making bip39 even easier</small></h2>
+          <p>Use the form below to generate a <i>Mnemonic</i> master address.</p>
+
+          <label>xPub Address</label>
+          <div class="input-group">
+            <input id="newMnemonicxpub" type="text" class="form-control" value="" readonly>
+            <span class="input-group-btn">
+                <button class="deriveHDbtn btn btn-default" type="button"><span title="Derive from key" class="glyphicon glyphicon-chevron-right"></span></button>
+            </span>
+          </div>
+
+          <label>xPrv Address</label>
+          <div class="input-group">
+            <input id="newMnemonicxprv" type="text" class="form-control" value="" readonly>
+            <span class="input-group-btn">
+                <button class="deriveHDbtn btn btn-default" type="button"><span title="Derive from key" class="glyphicon glyphicon-chevron-right"></span></button>
+            </span>
+          </div>
+
+
+
+          <h3>Address Options</h3>
+          <p>You can use the generate button different kinds of mnemonic master keys.</p>
+
+          
+            <label for="newMnemonicWords" data-original-title="" title="">BIP39 Mnemonic</label>
+
+            <div class="input-group" data-original-title="" title="">
+              <input id="newMnemonicWords" type="text" class="form-control" value="" data-original-title="" title="">
+              <span class="input-group-btn" data-original-title="" title="">
+                  <button id="newMnemonicGenerate" class="btn btn-default" type="button" data-original-title="" title="">Generate</button>
+                </span>
+            </div>
+          
+
+
+          <div class="checkbox">
+            <label><input type="checkbox" id="newMnemonicBrainwalletCheck" class="checkbox-inline"> BIP39 Password (recommended)</label>
+            
+
+            <div class="input-group" data-original-title="" title="">
+              <input type="text" class="form-control hidden" id="MnemonicBrainwallet">
+              <span class="input-group-btn hidden" data-original-title="" title="">
+                  <button class="btn btn-default generatePassword" type="button" data-input-for="MnemonicBrainwallet" data-original-title="" title="">Generate Password</button>
+                </span>
+            </div>
+
+
+          </div>
+
+          <input type="button" class="btn-flatbay " value="Generate" id="newMnemonicKeysBtn">
+        </div>
+
 
         <div class="tab-pane tab-content" id="newTransaction">
           <h2>Transaction <small>Create a new transaction</small></h2>
@@ -1399,27 +1480,32 @@
             <p>The path of key derivation</p>
 
             <div class="row">
-              <div class="col-md-8">
-                <b>Path</b>
-                <br>
-                <select class="form-control">
-                  <option>Simple: m/i</option>
-                </select>
-              </div>
+                <div class="col-md-8">
+                  <b>Path</b><br>
+                  <select class="form-control" id="hdpathtype"">
+                    <option value="simple">Simple: m/i</option>
+                    <option value="custom">Custom</option>
+                  </select>
 
-              <div class="col-md-2">
-                <b>Index (Start)</b>
-                <br>
-                <input type="text" class="form-control derivation_index_start" value="0">
-              </div>
+                  <div id="hdpath" class="hidden" style="margin-top:4px">
+                    <span class="input-group">
+                      <input type="text" class="form-control" value="m/0/1">  <br>
+                      <span class="input-group-addon"> / </span>
+                    </span>
+                  </div>
+                </div>
 
-              <div class="col-md-2">
-                <b>Index (End)</b>
-                <br>
-                <input type="text" class="form-control derivation_index_end" value="1">
-              </div>
+                <div class="col-md-2">
+                  <b><u>I</u>ndex (Start)</b><br>
+                  <input type="text" class="form-control derivation_index_start" value="0">
+                </div>
 
-            </div>
+                <div class="col-md-2">
+                  <b><u>I</u>ndex (End)</b><br>
+                  <input type="text" class="form-control derivation_index_end" value="1">
+                </div>
+
+              </div>
 
             <hr>
             <h4>Keys</h4>
@@ -1464,6 +1550,10 @@
 										<button class="showKey btn btn-default" type="button">Show</button>
 									</span>
               </div>
+            </div>
+            <div class="col-md-12 hidden">
+              <label for="signPrivateKeyAESPassword">AES password (optional)</label>
+              <input id="signPrivateKeyAESPassword" type="password" class="form-control" value="">
             </div>
           </div>
           <br>
@@ -1556,16 +1646,63 @@
         </div>
         
         <div class="tab-pane tab-content" id="network">
-          <h2>Network Info</h2>
-          <p>Here you can learn more about the network status, staking and rates.</br></p>
-          <p>Network info - <a href="https://chainz.cryptoid.info/bay/#!extraction">click here</a></p>
-          <p>Rates and votes - <a href="https://raw.githubusercontent.com/bitbaymarket/ratedb/master/rates.json">rates.json</a></p>
-          <p>Staking calculator - <a href="https://bitbay.market/staking-bitbay/index.html">https://bitbay.market/staking-bitbay/index.html</a></p>
-          <p>Supply, marketcap and coin distribution chart - <a href="./pegchart.htm">click here</a></p>
+          
+          <!-- Network panel info-->
+          <div class="row topPanel  ">
+            <div class="col-md-12 ">
+              <div class="row">
+                <div class="bs-component">
+              
+                <div class="col-md-4 col-sm-4 col-xs-6">
+                  <div class="panel panel-default">
+                    <div class="panel-body pegIndex">
+                      <h4 title="Peg index: seems to go up lately..."><span class="glyphicon glyphicon-scale"></span> <span class="currentPegIndex"><span class="glyphicon glyphicon-repeat glyphicon-spin"></span></span> <span class="glyphicon glyphicon-arrow-right"></span></h4>
+                      <p class="nextPegIndex">Next Peg index is 0</p> 
+                    </div>
+                    
+                  </div>
+                </div>
+                
+                <div class="col-md-4 col-sm-4 col-xs-6">
+                  <div class="panel panel-default">
+                    <div class="panel-body blockHeight">
+                      <h4 ><span class=" glyphicon glyphicon-cloud"></span> <span id="currentBlockHeight"><span class="glyphicon glyphicon-repeat glyphicon-spin"></span></span> </h4>
+                      <p class="blocksInHeight">Blocks in chain</p> 
+                    </div>
+                    
+                  </div>
+                </div>
+                <div class="col-md-4 col-sm-4 col-xs-6">
+                  <div class="panel panel-default">
+                    <div class="panel-body pegCycle">
+                      <h4 title="Peg cycle"><span class="glyphicon glyphicon-refresh"></span> <span class="pegCycleId"><span class="glyphicon glyphicon-repeat glyphicon-spin"></span></span></h4>
+                      <p title="A total of 0 Peg cycles has occurred" >Peg cycle</p> 
+                    </div>
+                    
+                  </div>
+                </div>
+                
+                
+                </div>
+              </div>
+            </div>
+          </div>
+
+          
+          <h2>Network Info <small>learn more about the network status, staking and rates.</small></h2>
+
+          
+            <p></p>
+            <p>Network info - <a href="https://chainz.cryptoid.info/bay/#!extraction">click here</a></p>
+            <p>Rates and votes - <a href="https://raw.githubusercontent.com/bitbaymarket/ratedb/master/rates.json">rates.json</a></p>
+            <p>Staking calculator - <a href="https://bitbay.market/staking-bitbay/index.html">https://bitbay.market/staking-bitbay/index.html</a></p>
+            <p>Supply, marketcap and coin distribution chart - <a href="./pegchart.htm">click here</a></p>
+          
 
 
         </div>
         
+        <!-- Help/FAQ -->
         <div class="tab-pane tab-content" id="help">
           <h2>Help/FAQ</h2>          
           <p>Dynamic peg FAQ - <a href="https://bitbay.market/forum-archive/c/dynamic-peg-faq.html">click here</a></p>
@@ -1671,7 +1808,7 @@
               <select class="form-control" id="coinjs_coin">
                 <option value="bitbay_mainnet" rel="0x19;0x99;0x55;0x02cfbf60;0x02cfbede;explorer.bitbay.market;explorer.bitbay.market;true;BAY">Bitbay (mainnet)</option>
 
-                <option value="bitcoin_mainnet" rel="0x00;0x80;0x05;0x488b21e;0x488ade4;coinb.in;coinb.in;false;BTC">BitBay (mainnet)</option>
+                <option value="bitcoin_mainnet" rel="0x00;0x80;0x05;0x488b21e;0x488ade4;coinb.in;coinb.in;false;BTC">Bitcoin (mainnet)</option>
 
                 <option value="dogecoin_mainnet" rel="0x1e;0x9e;0x16;0x0827421e;0x089944e4;chain.so_dogecoin;chain.so_dogecoin;false;DOGE">Dogecoin (mainnet)</option>
                 <option value="carboncoin_mainnet" rel="0x2f;0xaf;0x05;0x488b21e;0x488ade4;cryptoid.info_carboncoin;cryptoid.info_carboncoin;false;CARB">Carboncoin (mainnet)</option>
@@ -1801,6 +1938,126 @@
           <input type="submit" class="btn-flatbay " id="settingsBtn">
 
         </div>
+
+        <!-- Sign & Verify Message 
+        
+        <div class="tab-pane tab-content" id="signMsg">
+          <div class="row">
+            <div class="col-md-12">
+
+              <h2 data-original-title="" title="">Sign Message <small data-original-title="" title="">sign a message with your private key!</small></h2>
+              
+
+              <div class="col-md-12" data-original-title="" title="">
+                <label for="msgSignPrivateKey" data-original-title="" title="">Private key</label>
+
+                <div class="input-group" data-original-title="" title="">
+                  <input id="msgSignPrivateKey" type="password" class="form-control" value="" data-original-title="" title="">
+                  <span class="input-group-btn" data-original-title="" title="">
+                      <button class="showKey btn btn-default" type="button" data-original-title="" title="">Show</button>
+                    </span>
+                </div>
+              </div>
+
+              <div class="col-md-12" data-original-title="" title="">
+                <label for="msgSignAddress" data-original-title="" title="">Address</label>
+
+                  <input id="msgSignAddress" type="text" class="form-control" value="" data-original-title="" title="">
+                
+              </div>
+
+              <div class="col-md-12" data-original-title="" title="">
+                <label for="msgText" data-original-title="" title="">Message</label>
+
+                  <textarea class="form-control" id="msgText" rows="5" spellcheck="false"></textarea>
+              </div>
+
+              <div class="col-md-12 hidden" data-original-title="" title="">
+                <label class="" for="msgSignType">Signature Type</label>
+                <input name="msgSignType" value="inputs_io" type="radio" checked/>Inputs.IO
+              </div>
+
+
+              <div class="col-md-12" data-original-title="" title="">
+                <label for="msgTxtSigned" data-original-title="" title="">Signed Message</label>
+                  <textarea class="form-control" id="msgTxtSigned" rows="5" spellcheck="false"></textarea>
+              </div>
+
+              <div class="col-md-12" data-original-title="" title="">
+                <br>
+                <button class="btn-flatbay " id="msgSignBtn" title="Signatures require a random number which means signing the same data twice results in different signatures" type="button">Sign Message</button>
+                <span class="help-inline" id="sgLabel"></span>
+              </div>
+
+
+
+              
+            </div>
+          </div>
+        </div>
+
+        
+        <div class="tab-pane tab-content" id="verifyMsg">
+          <div class="row">
+            <div class="col-md-12">
+
+              <h2 data-original-title="" title="">Verify Message <small data-original-title="" title="">verify a signed message!</small></h2>
+              <form action="/" class="form-horizontal" id="vrForm" method="get" name="vrForm">
+                <fieldset>
+                  <legend>Verify Message</legend>
+                  <div class="hidden">
+                    <div class="col-lg-offset-2 col-lg-10 alert alert-success fade in" id="vrSuccess">
+                      <button aria-hidden="true" class="close" data-dismiss="alert" type="button">×</button> Message verified to be from <span id="vrAddrLabel"></span>
+                    </div>
+                    <div class="col-lg-offset-2 col-lg-10 alert alert-danger fade in" id="vrError">
+                      <button aria-hidden="true" class="close" data-dismiss="alert" type="button">×</button> Message failed to verify!
+                    </div>
+                    <div class="col-lg-offset-2 col-lg-10 alert alert-warning fade in" id="vrWarning">
+                      <button aria-hidden="true" class="close" data-dismiss="alert" type="button">×</button> Message verified to be from <span id="vrAddrLabel"></span> (address wasn't specified)
+                    </div>
+                  </div>
+                  <div id="vrAlert"></div>
+                  <div class="form-group">
+                    <label class="col-lg-2 control-label" for="vrFrom">Verify From</label>
+                    <div class="col-lg-10 controls">
+                      <div class="btn-group" data-toggle="buttons" id="vrFrom">
+                        <label class="btn btn-default active" title="RFC2440-like"><input id="vrFromMessage" name="vrFrom" type="radio" checked="">Signed Message</label>
+                        <label class="btn btn-default"><input id="vrFromForm" name="vrFrom" type="radio">Bitcoin-QT</label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group vrAddr" hidden="">
+                    <label class="col-lg-2 control-label" for="vrAddr">Address</label>
+                    <div class="col-lg-10 controls">
+                      <input class="form-control" id="vrAddr" type="text">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="col-lg-2 control-label" for="vrMsg">Message</label>
+                    <div class="col-lg-10 controls">
+                      <textarea class="form-control" id="vrMsg" rows="14" spellcheck="false"></textarea>
+                    </div>
+                  </div>
+                  <div class="form-group vrSig" hidden="">
+                    <label class="col-lg-2 control-label" for="vrSig">Signature</label>
+                    <div class="col-lg-10 controls">
+                      <input class="form-control" id="vrSig" spellcheck="false" type="text">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="col-lg-offset-2 col-lg-10 controls">
+                      <button class="hidden btn btn-default" id="vrSign" title="Copy message to the sign page and get into it." type="button">Copy to Sign Page</button>
+                    </div>
+                  </div>
+                </fieldset>
+              </form>
+            </div>
+          </div>
+        </div>
+
+      -->
+
+
 
 
       </div>

@@ -60,11 +60,13 @@ $(document).ready(function() {
     $("#openWalletType").val('regular').trigger('change');
     $("#multisigwallet").removeClass("active");
     $("#regularwallet").addClass("active");    
+    //$(".form-openWalletTypeText").text("Regular Wallet");
   }
   function showMultisigWallet(){
     $("#openWalletType").val('multisig').trigger('change');
     $("#regularwallet").removeClass("active");
     $("#multisigwallet").addClass("active");
+    //$(".form-openWalletTypeText").text("Multisig m-of-n Wallet");
   }  
 	$("#regularwallet,a[href$='#wallet']").on("click", function () {
     showRegularWallet();
@@ -134,7 +136,7 @@ $(document).ready(function() {
       
     var print = [];
 
-    print.push("<h2>wallet login information</h1>");
+    print.push("<h2>BitBay - Wallet Backup Information!</h1>");
     
     //passwords
     print.push("<h3>Email</h2>");
@@ -143,7 +145,7 @@ $(document).ready(function() {
     print.push("<h3>Password</h2>");
     print.push("<div>" + safe_tags(profile_data.passwords[0].password) + "</div>");
 
-    if(profile_data.passwords[1].password){
+    if(profile_data.passwords[1].password !== undefined){
       print.push("<h3>Password2</h2>");
       print.push("<div>" + safe_tags(profile_data.passwords[1].password) + "</div>");
     }
@@ -205,14 +207,21 @@ $(document).ready(function() {
         error += validateElem("#openPass","Password");
         error += validateElem("#openPass2","Password2");
         if(error){
-          $("#errormessages").html(error);
+          $("#openLoginStatus").html(error).removeClass("hidden").fadeOut().fadeIn();
+          $("#openLoginStatus").prepend('<span class="glyphicon glyphicon-exclamation-sign"></span> ');
+
+
+          //$("#errormessages").html(error);
       		return false;          
         }else{
-          $("#errormessages").html("");
+          //$("#errormessages").html("");
           oldClick();          
         }
       } else if(error) {
-        $("#errormessages").html(error);
+        //$("#errormessages").html(error);
+        $("#openLoginStatus").html(error).removeClass("hidden").fadeOut().fadeIn();
+        $("#openLoginStatus").prepend('<span class="glyphicon glyphicon-exclamation-sign"></span> ');
+
         return false;          
       } else {
         oldClick();
@@ -433,7 +442,7 @@ $(document).ready(function() {
 	
 
 
-  var walletVersion = "1.12";   //is used for human versioning
+  var walletVersion = "1.135";   //is used for human versioning
   var walletVersionCode = "9";  //is used for the update versioning of the wallet app
 
 
@@ -548,20 +557,45 @@ PNotify_remove = function () {
 
 
 
-
+//privkey signing progressbar init
  var sign_progressbar;
 
   //init progressbar for signing
   if(document.getElementById('sign').classList.contains('active')){
    sign_progressbar = new Nanobar({target: document.getElementById('nanobar-progress')});
-    console.log('nanobar-progress');
+    //console.log('nanobar-progress');
   }else{
    sign_progressbar = new Nanobar({target: document.getElementById('nanobar-progress-manual')});
-    console.log('nanobar-progress-manual');
+    //console.log('nanobar-progress-manual');
   }
   sign_progressbar.go(0);
 
 
+//https://stackoverflow.com/questions/9719570/generate-random-password-string-with-requirements-in-javascript
+function generatePassword(length = 40) {
+  var generatePass = (
+  //length = 20,
+  wishlist = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~'
+) =>
+  Array.from(crypto.getRandomValues(new Uint32Array(length)))
+    .map((x) => wishlist[x % wishlist.length])
+    .join('');
+
+  return generatePass();  
+}
+
+//Crypto Random Password generator! 
+$('.generatePassword').on("click", function () {
+    var $el = $(this);
+
+    if($el[0].dataset.inputFor == 'MnemonicBrainwallet') {
+      $("#newMnemonicxpub").val("");
+      $("#newMnemonicxprv").val("");
+    }
+
+    var inputElPass = $el.attr( "data-input-for");
+    $("#"+inputElPass).val(generatePassword());
+  });
 /*
 
 if (document.readyState === "complete" || (document.readyState !== "loading" && !document.documentElement.doScroll)) {

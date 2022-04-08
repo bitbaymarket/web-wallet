@@ -1,5 +1,58 @@
 var profile_data = "";
 var debug = false;
+var bip39 = new BIP39('en');
+/*
+
+	//multisig wallet options
+	function multisigMselect(event) {
+  //var x = document.getElementById("multisigMnumber").value;
+  //document.getElementById("demo").innerHTML = "You selected: " + x;
+  
+  
+  
+  var el = event.target;
+  var val = el.value;
+  alert('tst:  '+val);
+  
+  
+  //re-init the "m-of-N key" select options
+  var multisigNSelect = document.getElementById("multisigWalletNnumber");
+  multisigNSelect.innerHTML = '';
+    //we accept maximum 16 keys for multisig!
+  for(i=val; i<=16; i++) {
+    var option = document.createElement("option");
+    option.text = i;
+    multisigNSelect.add(option);
+  }
+}
+
+*/
+
+
+/*
+
+var values = [];
+$("input[name='openPassTest']").each(function() {
+    values.push(($(this).val()).trim());
+});
+
+
+var values = [];
+var passFields = document.getElementsByName("openPassTest");
+for(var i = 0; i < passFields.length; i++) {
+    values.push((passFields[i].value).trim());
+}
+
+
+		var passwordsArr = [];
+		for (i=0; ;i++) {
+			passwordsArr.push("password" : pass);
+		}
+		*/
+
+
+
+
 
 
 $(document).ready(function() {
@@ -9,11 +62,148 @@ $(document).ready(function() {
   /*get Price and Volume info */
   coinData();
   
+
+/*
+m-of-n address login, deprecated for the moment
+  // multisig wallet login 
+  document.getElementById('multisigWalletMnumber').addEventListener('change', function() {
+  
+  //var x = document.getElementById("multisigMnumber").value;
+  //document.getElementById("demo").innerHTML = "You selected: " + x;
+  
+  
+  
+  
+  var mVal = parseInt(this.value);
+  console.log('m: ' + mVal);
+  
+  
+  //re-init the "m-of-N key" select options
+  var multisigNSelect = document.getElementById("multisigWalletNnumber");
+  var oldNval = parseInt(multisigNSelect.value);
+  
+  console.log('n: ' + multisigNSelect.value);
+  
+  
+    
+    multisigNSelect.innerHTML = '';
+  
+    var walletLoginEl = document.getElementById("wallet")
+    walletLoginEl.innerHTML = "";
+    multisigNSelect.innerHTML = "";
+    var inputPass, inputEmail;
+    var j=1;
+    
+  //we accept maximum 16 keys for multisig wallets!  
+  for(i=0; i<=16; i++) {
+    
+    //n should not be more then 16!
+    if(mVal+i <=16){
+      //add select options for X multisig keys
+      var option = document.createElement("option");
+      option.text = (mVal+i);
+      
+      //set n address to selected if set by user
+      if(parseInt(mVal+i) == oldNval) {
+        option.selected = 'selected';
+        console.log('if selected: ' + multisigNSelect.value);
+       }else{
+         console.log('else selected: ' + parseInt(multisigNSelect.value));
+         console.log('else option.text: ' + parseInt(mVal+i));
+       }
+
+      multisigNSelect.add(option);
+     }
+    
+    
+    //append multisig input fields 
+    if(j <= oldNval || j <= mVal ) {
+      //create input elements for X multisig keys
+      inputPass = document.createElement("input");
+      inputPass.name ="openEmail";
+      inputPass.placeholder = "Password "+ j;
+      
+      inputEmail = document.createElement("input");
+      inputEmail.name ="openEmail";
+      inputEmail.placeholder = "E-mail address "+ j;
+    
+      walletLoginEl.append(inputEmail);
+      walletLoginEl.append(inputPass);
+    }
+    j++;
+
+  }
+
+});
+
+document.getElementById('multisigWalletNnumber').addEventListener('change', function() {
+  console.log('N value: ', this.value);
+  
+  var walletLoginEl = document.getElementById("wallet")
+  walletLoginEl.innerHTML = "";
+  
+  for(i=1; i<=this.value; i++) {
+    
+    inputPass = document.createElement("input");
+    inputPass.name ="openEmail";
+    inputPass.placeholder = "Password "+ i;
+    
+    inputEmail = document.createElement("input");
+    inputEmail.name ="openEmail";
+    inputEmail.placeholder = "E-mail address "+ i;
+    
+    walletLoginEl.append(inputEmail);
+    walletLoginEl.append(inputPass);
+    
+  }
+  
+});
+*/
+
+
+document.getElementById('openBtn').addEventListener('click', function () {
+  console.log("You finally clicked without jQuery");
+  
+  
+  //get passwords
+  var loginPass = [];
+  var loginPassEl = document.getElementsByName("openPass");
+  for(var i = 0; i < loginPassEl.length; i++) {
+    loginPass.push({"password": (loginPassEl[i].value).trim()});
+    
+  }
+  
+  console.log('loginPass: ', loginPass);
+  
+  console.log('loginPass: ' + loginPass[0]["password"]);
+  console.log('loginPass: ' + loginPass[1]["password"]);
+  
+  
+  //get confirmed passwords 
+  var loginPassConfirm = [];
+  var loginPassConfirmEl = document.getElementsByName("openPass-confirm");
+  for(var i = 0; i < loginPassConfirmEl.length; i++) {
+    loginPassConfirm.push({"password": (loginPassConfirmEl[i].value).trim()});
+    
+  }
+  
+  console.log('loginPassConfirm: ', loginPassConfirm);
+  
+  console.log('loginPassConfirm: ' + loginPassConfirm[0]["password"]);
+  console.log('loginPassConfirm: ' + loginPassConfirm[1]["password"]);
+  
+  
+});
+
+
 	/* open wallet code */
 
 	var explorer_tx = "https://coinb.in/tx/"
 	var explorer_addr = "https://coinb.in/addr/"
 	var explorer_block = "https://coinb.in/block/"
+
+
+
 	$("#openBtn").click(function(){
 		var pass = $("#openPass").val();
 		var pass2 = $("#openPass2").val();
@@ -22,9 +212,32 @@ $(document).ready(function() {
 		var email = email.trim();
 		var walletType = $("#regularwallet").hasClass("active") ? "regular" : "multisig";
 		
+
 		profile_data = { 
 		"email" : email,
 		"wallet_type" : walletType,	//regular (login normal address), multisig (login multisig address), key (login with private key)
+		"remember_me" : remember_me,
+		"signatures" : 1,
+		"passwords" : [
+				{
+					"password" : pass,
+				}
+			]
+		};
+
+		//save the second key 
+		if(pass2 != "") {
+			profile_data.passwords.push({"password" : pass2});
+			profile_data.signatures = 2;
+		}
+
+
+/*
+profile_data = { 
+		"address" : "",
+		"email" : email,
+		"login_type" : "", //"password" (email, password login), "key" login, "mnemonic" login
+		"wallet_type" : walletType,	//regular (login normal address), multisig (login multisig address), key (login with private key), mnemonic (Mnemonic words login)
 		"remember_me" : remember_me,
 		"signatures" : 1,
 		"passwords" : [
@@ -34,8 +247,35 @@ $(document).ready(function() {
 				{
 					"password" : pass2
 				}
+			],
+		"keys" : [
+				{"key" : ""}, 
+				{"key" : ""}
 			]
 		};
+
+
+
+
+		profile_data = { 
+		"email" : email,
+		"wallet_type" : walletType,	//regular (login normal address), multisig (login multisig address), key (login with private key), mnemonic (Mnemonic words login)
+		"remember_me" : remember_me,
+		"signatures" : 1,
+		"passwords" : [
+				{
+					"password" : pass,
+				},
+				{
+					"password" : pass2
+				}
+			],
+		"keys" : [
+				{"key" : ""}, 
+				{"key" : ""}
+			]
+		};
+		*/
 		//checkUserLogin(JSON.parse(profile_data));
 		checkUserLogin(profile_data);
 	});
@@ -436,8 +676,8 @@ $(document).ready(function() {
 					*/
           
           
-          reset_broadcast_progress_bar();
-          
+					reset_broadcast_progress_bar();
+	
 					// and finally broadcast!
 					tx2.broadcast(function(data){
 						if (debug) {					
@@ -606,7 +846,6 @@ async function init_broadcast_progress_bar(txinputs_total, manualTransaction=1) 
 	$("#walletSendFailTransaction textarea").val("");
 								
 	$(".broadcast-process").removeClass("hidden");
-	var profile_data = HTML5.sessionStorage('profile_data').get();
 	var totalSignatures;
 
 	if(manualTransaction == 1){
@@ -813,11 +1052,11 @@ async function init_broadcast_progress_bar(txinputs_total, manualTransaction=1) 
 			if (debug) {console.log('peginfo: ', data);}
       
       if(data.api_status=="success"){
-        $("#currentPegIndex").text( data.result.peg );
-        $("#nextPegIndex").text( "Next Peg index is " + data.result.pegnext + " and then " + data.result.pegnextnext);
+        $(".currentPegIndex").text( data.result.peg );
+        $(".nextPegIndex").text( "Next Peg index is " + data.result.pegnext + " and then " + data.result.pegnextnext);
         
-        $("#pegCycleId").text(data.result.cycle );
-        $(".pegCycle p").attr("data-original-title", "A total of " + data.result.cycle + " Peg cycles has happened");
+        $(".pegCycleId").text(data.result.cycle );
+        $(".pegCycle p").attr("data-original-title", "A total of " + data.result.cycle + " Peg cycles has occurred");
         
         if(data.result.pegnext > data.result.peg){
           $(".pegIndex h4").attr("data-original-title", "Peg-Index seems to increase lately...");
@@ -1217,6 +1456,7 @@ function drawPieChart(piechart, pegBalanceData) {
 		} else {
 			$("#aes256passStatus").removeClass("hidden");
 		}
+
 		$("#newPrivKeyEnc").val(CryptoJS.AES.encrypt(coin.wif, $("#aes256pass").val())+'');
 
 	});
@@ -1454,6 +1694,63 @@ function drawPieChart(piechart, pegBalanceData) {
 			$("#HDBrainwallet").addClass("hidden");
 		}
 	});
+
+	
+	/* new -> Mnemonic address code */
+
+	$("#newMnemonicGenerate").click(function(){
+		$("#newMnemonicxpub").val("");
+		$("#newMnemonicxprv").val("");
+		var s = bip39.generateMnemonic((24/3)*32);	//24 mnemonic words!
+		$("#newMnemonicWords").val(s);
+		$("#newMnemonicWords").parent().removeClass("has-warning").removeAttr('title').attr('title', '').attr("data-original-title", '');
+	});
+
+	$("#newMnemonicKeysBtn").click(function(){
+
+		//console.log('checked? ', $("#newMnemonicBrainwalletCheck").is(":checked"));
+		coinjs.compressed = true;
+		var s  = $("#newMnemonicWords").val();	//seed
+
+		//validate bip39 mnemonic
+		if(!bip39.validate(s)){
+        $("#newMnemonicxpub").val("");
+				$("#newMnemonicxprv").val("");
+        $("#newMnemonicWords").parent().addClass("has-warning").attr('title', 'Incorrect BIP39 Phrase').attr("data-original-title", 'Incorrect BIP39 Phrase').tooltip();
+
+
+        return ;
+		} else {
+			$("#newMnemonicWords").parent().removeClass("has-warning").removeAttr('title');
+
+			$("#newMnemonicWords .tooltip").remove();
+    //$("#walletSpendTo .addressRemove").find(".tooltip").remove().unbind("");
+		}
+
+
+		var p  = ($("#newMnemonicBrainwalletCheck").is(":checked")) ? $("#MnemonicBrainwallet").val() : null;	//user pass
+
+		var hd = coinjs.hd();
+		var pair = hd.masterMnemonic(s, p);
+		$("#newMnemonicxpub").val(pair.pubkey).fadeIn();
+		$("#newMnemonicxprv").val(pair.privkey).fadeIn();
+		
+	});
+
+	$("#newMnemonicBrainwalletCheck").click(function(){
+		if($(this).is(":checked")){
+			$("#MnemonicBrainwallet").removeClass("hidden");
+			$("#MnemonicBrainwallet").next().removeClass("hidden")
+
+		} else {
+			$("#MnemonicBrainwallet").addClass("hidden");
+			$("#MnemonicBrainwallet").next().addClass("hidden")
+		}
+	});
+
+	
+
+	
 
 	/* new -> transaction code */
 	$("#recipients .addressAddTo").click(function(){
@@ -1935,7 +2232,7 @@ function drawPieChart(piechart, pegBalanceData) {
 			} else if (((($("#opReturn").is(":checked")) && a.match(/^[a-f0-9]+$/ig)) && a.length<160) && (a.length%2)==0) { // data
 				estimatedTxSize += (a.length / 2) + 1 + 8
 				tx.adddata(a);
-			} else if(a.indexOf("**F**") !== -1 || a.indexOf("6a") !== -1) {	//allow for F-notations for manual transactions
+			} else if(a.indexOf("**F**") !== -1 || a.indexOf("6a") !== -1) {	//allow F-notations for manual transactions
 
 						/*
 						var fnotereplace = a.replace('6a','');
@@ -1948,7 +2245,10 @@ function drawPieChart(piechart, pegBalanceData) {
 						var fnote = "**F**"+out_indexes;
 						*/
 						
+						console.log('a:', a);
 						var getoN = a.split(" ");
+						console.log('getoN: ', getoN);
+
 						getoN[2].replace(/\s/g, '');
 
 						var fnote = "**F**"+String(getoN[2]);
@@ -2011,7 +2311,9 @@ function drawPieChart(piechart, pegBalanceData) {
 			//add an extra output and send it back to the user as change back
 			if(sumReserveToSend){
 
-				var userAddress = $('#redeemFrom').val();
+				//var userAddress = $('#redeemFrom').val();
+				var userAddress = $('#redeemFromAddress a').text();
+
 				sumReserveToSend = parseFloat(sumReserveToSend).toFixed(8);
 
 				if (debug) {
@@ -2028,13 +2330,17 @@ function drawPieChart(piechart, pegBalanceData) {
 
 				$('#recipients .row.recipient.send-back-reserve-as-change .input-group').addClass('has-warning').attr('title', 'Change back to the user');;
 				$('#recipients .row.recipient.send-back-reserve-as-change input.address').val(userAddress);
-				$('#recipients .row.recipient.send-back-reserve-as-change input.amount').val(sumReserveToSend);
+
+				//if the user edits the change back amount of reserve, then dont touch it!				
+				if (!$('#recipients .row.recipient.send-back-reserve-as-change input.amount').val())
+					$('#recipients .row.recipient.send-back-reserve-as-change input.amount').val(sumReserveToSend);
+
 				$('#recipients .row.recipient.send-back-reserve-as-change button').removeClass('qrcodeScanner');
 				$('#recipients .row.recipient.send-back-reserve-as-change button span').removeClass('glyphicon-camera').addClass('glyphicon-lock').attr('disabled', true);
 
 				$('#recipients .row.recipient.send-back-reserve-as-change input').attr('title', 'Change back to the user!');
 
-				$('#recipients .row.recipient.send-back-reserve-as-change input').attr('disabled', true);
+				$('#recipients .row.recipient.send-back-reserve-as-change input').attr('disabled', false);
 				$('#recipients .row.recipient.send-back-reserve-as-change button').attr('disabled', true);
 				
 
@@ -2285,7 +2591,9 @@ observer.observe(target, config);
 
 		if($("#redeemFromStatus").hasClass("hidden")) {
 			// An ethical dilemma: Should we automatically set nLockTime?
-			if(redeem.from == 'redeemScript' && redeem.decodedRs.type == "hodl__") {
+			//if(redeem.from == 'redeemScript' && redeem.decodedRs.type == "hodl__") {
+			//if(redeem.from == 'redeemScript' && redeem.decodescript.type == "hodl__") {
+			if(redeem.from == 'redeemScript' && redeem.type == "hodl__") {
 				$("#nLockTime").val(redeem.decodedRs.checklocktimeverify);
 			} else {
 				$("#nLockTime").val(0);
@@ -2302,28 +2610,41 @@ observer.observe(target, config);
 		if(decode.version == coinjs.pub){ // regular address
 			r.addr = string;
 			r.from = 'address';
-			r.isMultisig = false;
+			r.redeemscript = false;
 		} else if (decode.version == coinjs.priv){ // wif key
 			var a = coinjs.wif2address(string);
 			r.addr = a['address'];
 			r.from = 'wif';
-			r.isMultisig = false;
+			r.redeemscript = false;
 		} else if (decode.version == coinjs.multisig){ // mulisig address
 			r.addr = '';
 			r.from = 'multisigAddress';
-			r.isMultisig = false;
+			r.redeemscript = false;
+		} else if(decode.type == 'bech32'){
+			r.addr = string;
+			r.from = 'bech32';
+			r.decodedRs = decode.redeemscript;
+			r.redeemscript = true;
 		} else {
 			var script = coinjs.script();
 			var decodeRs = script.decodeRedeemScript(string);
 			if(decodeRs){ // redeem script
 				r.addr = decodeRs['address'];
 				r.from = 'redeemScript';
-				r.decodedRs = decodeRs;
-				r.isMultisig = true; // not quite, may be hodl
+				r.decodedRs = decodeRs.redeemscript;
+				r.type = decodeRs['type'];
+				r.redeemscript = true;
+				r.decodescript = decodeRs;
 			} else { // something else
-				r.addr = '';
-				r.from = 'other';
-				r.isMultisig = false;
+				if(string.match(/^[a-f0-9]{64}$/i)){
+					r.addr = string;
+					r.from = 'txid';
+					r.redeemscript = false;
+				} else {
+					r.addr = '';
+					r.from = 'other';
+					r.redeemscript = false;
+				}
 			}
 		}
 		return r;
@@ -2551,8 +2872,9 @@ observer.observe(target, config);
 							}
 
 							
+							console.log('redeem', redeem);
 							//Inform about Time Locked Address if found
-							if( redeem.from == 'redeemScript' && redeem.decodedRs.type == "hodl__" ) {
+							if( redeem.from == 'redeemScript' && ((typeof redeem.decodedRs !== 'undefined') && redeem.decodedRs.type == "hodl__" )) {
 								//This is a Time locked address with release date
 								var checkLocktimeBlockdDate = ( redeem.decodedRs.checklocktimeverify >= 500000000 )? (new Date(redeem.decodedRs.checklocktimeverify*1000).toUTCString()) : ("Block height "+redeem.decodedRs.checklocktimeverify);
 								
@@ -2641,7 +2963,6 @@ observer.observe(target, config);
 		$(thisbtn).val('Please wait, loading...').attr('disabled',true);
 
 
-rawSubmitBtn
 		var decodingError = false;
 
 		// check first if the rawTX can be decoded, if not throw error!!
@@ -3050,7 +3371,11 @@ rawSubmitBtn
 		var html = '';
 		$("#verifyHDaddress .derived_data table tbody").html("");
 		for(var i=index_start;i<=index_end;i++){
-			var derived = hd.derive(i);
+			if($("#hdpathtype option:selected").val()=='simple'){
+				var derived = hd.derive(i);
+			} else {
+				var derived = hd.derive_path(($("#hdpath input").val().replace(/\/+$/, ""))+'/'+i);
+			}
 			html += '<tr>';
 			html += '<td>'+i+'</td>';
 			html += '<td><input type="text" class="form-control" value="'+derived.keys.address+'" readonly></td>';
@@ -3062,19 +3387,74 @@ rawSubmitBtn
 		$(html).appendTo("#verifyHDaddress .derived_data table tbody");
 	}
 
+	$("#hdpathtype").change(function(){
+		if($(this).val()=='simple'){
+			$("#hdpath").removeClass().addClass("hidden");
+		} else {
+			$("#hdpath").removeClass();
+		}
+	});
 
 	/* sign code */
+	$("#signPrivateKey").change(function(){
+		var signedPrivKey = $(this);
+		if(signedPrivKey){
+
+			$(signedPrivKey).parent().removeClass('has-error').removeClass('has-success');
+
+			if((signedPrivKey.val()).search('U2') == 0) {
+
+				var aesPassphrase = $("#signPrivateKeyAESPassword");
+				var decrypted = CryptoJS.AES.decrypt(signedPrivKey.val(), aesPassphrase.val()).toString(CryptoJS.enc.Utf8);
+
+				$(aesPassphrase).parent().removeClass("hidden");
+				console.log('decrypted: ', decrypted);
+
+				if(coinjs.addressDecode(decrypted)){
+					$(aesPassphrase).parent().removeClass('has-error').addClass('has-success');
+					signedPrivKey.val(decrypted);
+				} else {
+					$(aesPassphrase).parent().addClass('has-error').removeClass('has-success');
+				}
+
+			} else{
+				$("#signPrivateKeyAESPassword").parent().addClass("hidden");
+				console.log('there is no aes encryption!')
+			}
+			
+		}
+	});
+
 
 	$("#signBtn").click(async function(){
 		$(this).attr('disabled',true);
 
 		var wifkey = $("#signPrivateKey");
+		var aesPassphrase = $("#signPrivateKeyAESPassword");
 		var script = $("#signTransaction");
 
-		if(coinjs.addressDecode(wifkey.val())){
-			$(wifkey).parent().removeClass('has-error');
-		} else {
-			$(wifkey).parent().addClass('has-error');
+		//check if user has set AES password and decrypt it!
+		if(aesPassphrase.val()!=""){
+			
+			try {
+				var decrypted = CryptoJS.AES.decrypt(wifkey.val(), aesPassphrase.val()).toString(CryptoJS.enc.Utf8);
+				if(coinjs.addressDecode(decrypted)){
+					$(aesPassphrase).parent().removeClass('has-error').addClass('has-success');
+					wifkey.val(decrypted);
+					$(wifkey).parent().removeClass('has-error').addClass('has-success');
+				} else {
+					$(aesPassphrase).parent().addClass('has-error').removeClass('has-success');
+				}
+			} catch(e) {
+				 console.log(e);
+				$(aesPassphrase).parent().addClass('has-error').removeClass('has-success');
+			}
+		}else {
+			if(coinjs.addressDecode(wifkey.val())){
+				$(wifkey).parent().removeClass('has-error');
+			} else {
+				$(wifkey).parent().addClass('has-error');
+			}
 		}
 
 		if((script.val()).match(/^[a-f0-9]+$/ig)){
@@ -3219,9 +3599,7 @@ rawSubmitBtn
 
 	$('a[data-toggle="tab"]').on('click', function(e) {
 		e.preventDefault();
-		var attr = $(e.target).attr('href');
-		// For some browsers, `attr` is undefined; for others, `attr` is false. Check for both.
-		if (typeof attr !== typeof undefined && attr !== false) {
+		if(e.target && $(e.target).attr('href')) {
 			history.pushState(null, null, '#'+$(e.target).attr('href').substr(1));
 		}
 	});
@@ -3418,7 +3796,7 @@ rawSubmitBtn
 			} else if (str.search(/[A-Z]/) == -1) {
 				msg= ("no_upper_case");
 			//} else if (str.search(/[^a-zA-Z0-9\!\@\#\$\%\^\&\*\(\)\_\+\.\=\,\;\:\!\-]/) != -1) {
-			} else if (str.search(/[^a-zA-Z0-9\!\@\€\¤\£\`\´\#\$\"\'\%\^\&\*\(\)\_\+\.\=\~\¨\|\,\;\:\!\-\[\]\}\{\/\\\?\>\<\^]/) != -1) {
+			} else if (str.search(/[^a-zA-Z0-9\!\@\§\½\€\¤\£\`\´\#\$\"\'\%\^\&\*\(\)\_\+\.\=\~\¨\|\,\;\:\!\-\[\]\}\{\/\\\?\>\<\^]/) != -1) {
 				msg= ("bad_char");
 			}else {
 				msg=("");
@@ -3429,7 +3807,6 @@ rawSubmitBtn
 			//var regex = /^(((.*\d.*[A-Z].*[!@#%&¨*¤()+-={}[\]"'*:.,<>_\-$€%^&amp;amp;*? ~].*))|(.*[A-Z].*\d.*[!@#%&¨*¤()+-={}[\]"'*:.,<>_\-$€%^&amp;amp;*? ~].*)|(.*[!@#%&¨*¤()+-={}[\]"'*:.,<>_\-$€%^&amp;amp;*? ~].*[A-Z].*\d.*)|(.*[!@#%&¨*¤()+-={}[\]"'*:.,<>_\-$€%^&amp;amp;*? ~].*\d.*[A-Z].*))$/i;
 			//var regex = /.*\d.*\w.*\D.*/i;
 			//if (!regex.test(str)) {msg= ("bad_char");}
-			
 			
 			if (msg != '') {
 				//$('.checkInputsError').removeClass("hidden");
@@ -3597,7 +3974,13 @@ rawSubmitBtn
 									address = multisig["address"];
 									
 									var privkeyaes = CryptoJS.AES.encrypt(keys.wif, s);
+									//console.log('keys.wif: ', keys.wif);
+									//console.log('s: ', s);
+
 									var privkeyaes2 = CryptoJS.AES.encrypt(keys2.wif, s2);
+
+									//console.log('keys2.wif: ', keys.wif);
+									//console.log('s2: ', s2);
 									
 									$("#walletKeys .redeemScript_wallet").val(multisig["redeemScript"]);
 									
@@ -3616,7 +3999,7 @@ rawSubmitBtn
 							}
 
 						} else {
-							$("#openLoginStatus").html("Your 2nd password must at least have 12 chars and must include minimum 1 number, 1 uppercase letter, 1 lowercase letter and 1 special character from !@#$%^&*()_+.=,;:!-[]}{/\?><^").removeClass("hidden").fadeOut().fadeIn();							
+							$("#openLoginStatus").html("Your 2nd password must at least have 12 chars and must include minimum 1 number, 1 uppercase letter, 1 lowercase letter and 1 special character from \"#$€%&\'()*+,-./:;<=>?@[\]^_`{|}~¤¨½§").removeClass("hidden").fadeOut().fadeIn();							
 						}
 						
 					//Create Regular address
@@ -3656,6 +4039,7 @@ rawSubmitBtn
 						qrcode.makeCode("bitbay:"+address);
 
 
+						console.log('keys: ', keys);
 						$("#walletKeys .address").val(address);
 						$("#walletKeys .privkey").val(keys.wif);
 						$("#walletKeys .pubkey").val(keys.pubkey);
@@ -3699,7 +4083,7 @@ rawSubmitBtn
 						}
 					
 				} else {
-					$("#openLoginStatus").html("Your password must at least have 12 chars and must include minimum 1 number, 1 uppercase letter, 1 lowercase letter and 1 special character from !@#$%^&*()_+.=,;:!-[]}{/\?><^").removeClass("hidden").fadeOut().fadeIn();
+					$("#openLoginStatus").html("Your password must at least have 12 chars and must include minimum 1 number, 1 uppercase letter, 1 lowercase letter and 1 special character from \"!#$€%&\'()*+,-./:;<=>?@[\]^_`{|}~¤¨½§").removeClass("hidden").fadeOut().fadeIn();
 				}
 				
 			

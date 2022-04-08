@@ -13,12 +13,19 @@
 
 
 	/* public vars */
+	
 	coinjs.pub = 0x19;
 	coinjs.priv = 0x99;
 	coinjs.multisig = 0x55;
 	coinjs.multisig_str = "55";
 	coinjs.hdkey = {'prv':0x02cfbede, 'pub':0x02cfbf60};
-
+	
+	/*
+	coinjs.pub = 0x00;
+	coinjs.priv = 0x80;
+	coinjs.multisig = 0x05;
+	coinjs.hdkey = {'prv':0x0488ade4, 'pub':0x0488b21e};
+*/
 	coinjs.compressed = false;
 
 	//For Bitbay, Blackcoin
@@ -354,16 +361,30 @@ https://api.latoken.com/v2/ticker
 	}
 
 	/* provide a privkey and return an WIF  */
-	coinjs.privkey2wif = function(h){
+	coinjs.privkey2wif = function(h, compress = true){
 		var r = Crypto.util.hexToBytes(h);
 
-		if(coinjs.compressed==true){
+		if (compress) {
 			r.push(0x01);
+			console.log('compress: ');
 		}
+			/*
+		}
+		if(coinjs.compressed==true && !h.match(/^[a-f0-9]+$/i)){
+			r.push(0x01);
+			console.log('compressed: ');
+		}
+		*/
 
 		r.unshift(coinjs.priv);
+		console.log('r: ', r);
+		
 		var hash = Crypto.SHA256(Crypto.SHA256(r, {asBytes: true}), {asBytes: true});
 		var checksum = hash.slice(0, 4);
+
+		console.log('hash: ', hash);
+		console.log('checksum Crypto.util.bytesToHex: ', Crypto.util.bytesToHex(checksum));
+		
 
 		return coinjs.base58encode(r.concat(checksum));
 	}
@@ -729,6 +750,8 @@ https://api.latoken.com/v2/ticker
 
 				coinjs.compressed = c; // reset to default
 			}
+
+			return r;
 		}
 
 		// extend prv/pub key
@@ -740,6 +763,34 @@ https://api.latoken.com/v2/ticker
 				'chain_code':this.chain_code,
 				'privkey':this.keys.privkey,
 				'pubkey':this.keys.pubkey});
+		}
+
+		// derive from path
+		r.derive_path = function(path) {
+
+			if( path == 'm' || path == 'M' || path == 'm\'' || path == 'M\'' ) return this;
+
+			var p = path.split('/');
+			var hdp = coinjs.clone(this);  // clone hd path
+
+			for( var i in p ) {
+
+				if((( i == 0 ) && c != 'm') || i == 'remove'){
+					continue;
+				}
+
+				var c = p[i];
+
+				var use_private = (c.length > 1) && (c[c.length-1] == '\'');
+				var child_index = parseInt(use_private ? c.slice(0, c.length - 1) : c) & 0x7fffffff;
+				if(use_private)
+					child_index += 0x80000000;
+
+				hdp = hdp.derive(child_index);
+				var key = ((hdp.keys_extended.privkey) && hdp.keys_extended.privkey!='') ? hdp.keys_extended.privkey : hdp.keys_extended.pubkey;
+				hdp = coinjs.hd(key);
+			}
+			return hdp;
 		}
 
 		// derive key from index
@@ -820,6 +871,31 @@ https://api.latoken.com/v2/ticker
 				'pubkey':coinjs.newPubkey(I.slice(0, 64))});
 		}
 
+
+		// make a master hd xprv/xpub
+		r.masterMnemonic = function(seed, pass) {
+			
+			seed = seed.normalize('NFKD');
+			pass = (pass !== null) ? pass.normalize('NFKD') : pass;
+
+			seeder = bip39.mnemonicToSeed(seed, pass);
+
+			var hasher = new jsSHA(seeder, 'HEX');
+			var I = hasher.getHMAC("Bitcoin seed", "TEXT", "SHA-512", "HEX");
+
+			var isl64 = I.slice(0, 64);
+			var privkey = Crypto.util.hexToBytes(isl64);
+			var chain = Crypto.util.hexToBytes(I.slice(64, 128));
+
+			var hd = coinjs.hd();
+			return hd.make({'depth':0,
+				'parent_fingerprint':[0,0,0,0],
+				'child_index':0,
+				'chain_code':chain,
+				'privkey':isl64,
+				'pubkey':coinjs.newPubkey(isl64)});
+		}
+
 		// encode data to a base58 string
 		r.make = function(data){ // { (int) depth, (array) parent_fingerprint, (int) child_index, (byte array) chain_code, (hex str) privkey, (hex str) pubkey}
 			var k = [];
@@ -863,8 +939,7 @@ https://api.latoken.com/v2/ticker
 			return o;
 		}
 
-		r.parse();
-		return r;
+		return r.parse();
 	}
 
 
@@ -2202,15 +2277,18 @@ https://api.latoken.com/v2/ticker
 	}
 
 	coinjs.random = function(length) {
+		
+		var l = length || 40;
+		/*
 		var r = "";
-		var l = length || 25;
 		var chars = "!$%^&*()_+{}:@~?><|\./;'#][=-abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
 		for(x=0;x<l;x++) {
 			r += chars.charAt(Math.floor(Math.random() * 62));
 		}
 		return r;
+		*/
+
+		return generatePassword(l);
 	}
-
-
 
 })();
