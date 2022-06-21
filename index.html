@@ -8,6 +8,9 @@
   <meta http-equiv="content-type" content="text/html;charset=utf-8" />
   <meta name="keywords" content="bitbay, wallet, multisig, locktime, market, multisignature, address, browser, javascript, js, broadcast, transaction, verify, decode" />
   <meta name="description" content="A Bitbay Wallet written in Javascript. Supports Multisig, Custom Transactions, nLockTime and more!" />
+  <meta content='yes' name='apple-mobile-web-app-capable'/>
+  <meta content='yes' name='mobile-web-app-capable'/>
+
 
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,6 +22,7 @@
 						  script-src * 'self' 'unsafe-inline' 'unsafe-eval';">
 		-->
   <!-- ****** faviconit.com favicons ****** -->
+  <link rel="manifest" href="manifest.json">
   <link rel="shortcut icon" href="assets/images/favicon/favicon.ico">
   <link rel="icon" sizes="16x16 32x32 64x64" href="assets/images/favicon/favicon.ico">
   <link rel="icon" type="image/png" sizes="196x196" href="assets/images/favicon/favicon-192.png">
@@ -42,7 +46,10 @@
   <!-- ****** faviconit.com favicons ****** -->
 
   <link rel="stylesheet" href="assets/css/themes/Cerulean/bootstrap.min.css" media="screen" id="bootstrap-css">
+
+  <link rel="stylesheet" href="assets/css/icons/bootstrap-icons_v1.83.css">
   <link rel="stylesheet" href="assets/css/bootstrap-datetimepicker.min.css">
+  <link rel="stylesheet" href="assets/css/bootstrap-dialog.css">
   <link rel="stylesheet" href="assets/css/pnotify.custom.min.css" media="all">
   <link rel="stylesheet" href="assets/css/style.css?v=1.13" media="screen">
 
@@ -56,9 +63,10 @@
 
   <script type="text/javascript" src="js/bootstrap.min.js"></script>
   <script type="text/javascript" src="js/bootstrap-datetimepicker.min.js"></script>
-
+  <script type="text/javascript" src="assets/js/bootstrap-dialog.js"></script>
   
-
+  
+  <script type="text/javascript" src="js/aes-js.js"></script>
   <script type="text/javascript" src="js/crypto-min.js"></script>
   <script type="text/javascript" src="js/crypto-sha256.js"></script>
   <script type="text/javascript" src="js/crypto-sha256-hmac.js"></script>
@@ -96,17 +104,17 @@
           <ul class="nav navbar-nav navbar-right newmenu">
             <li class="dropdown">
               <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                <span class="glyphicon glyphicon-menu-hamburger"></span>
+                <span class="menu-icon bi bi-menu-button-fill"></span>
               </a>
               <ul class="dropdown-menu">
-                <li class="loginhide active"><a href="#wallet" data-toggle="tab">Regular Wallet</a></li>
-                <li class="loginhide"><a href="#wallet" data-toggle="tab" id="multisigwalletLink">MultiSig Wallet</a></li>
+                <li class="loginhide active"><a href="#wallet" id="wallet_options" data-toggle="tab">Wallet</a></li>
                 <li class="logouthide">
                   <a href="#wallet" data-toggle="tab">Wallet
-											<p class="text-left small walletEmail"></p>
+											<p class="text-left small walletAddress"></p>
 											<p class="walletBalance"></p>
 										</a>
                 </li>
+                <li class="logouthide"><a href="#advanced" data-toggle="modal">Advanced</a></li>
                 <li class="divider-text"></li>
                 <li><a href="#network" data-toggle="tab">Network</a></li>
                 <li class="divider-text"></li>
@@ -138,13 +146,6 @@
             <img class="small logouthide" src="assets/images/logo-dark-small.svg">
             <img class="loginhide" height="52" src="assets/images/logo.svg" />
           </a>
-          <div class="row accountSessionLogout hide top-status">
-            <a href="#wallet">
-              <p class="text-left small walletEmail"></p>
-            </a>
-            <a class="walletLogout" href="javascript:;" class="color-link" role="button" data-destroy="true">Logout</a>
-            <a href="#" class="walletBalance"></a>
-          </div>
         </div>
       </div>
     </div>
@@ -152,58 +153,54 @@
 
     <div id="content" class="container">
 
-      <noscript class="alert alert-danger center-block"><span class="glyphicon glyphicon-exclamation-sign"></span> This page uses javascript, please enable it to continue!</noscript>
+      <noscript class="alert alert-danger center-block"><i class="bi bi-exclamation-triangle-fill"></i> This page uses javascript, please enable it to continue!</noscript>
 
       <!-- Dynamic Peg stats & Price tracking !-->
       
-        <div class="row topPanel">
-        <div class="col-md-12">
+    <div class="row-no-padding topPanel">
+      <div class="col-md-12">
         <div class="row">
           <div class="bs-component">
         
-          <div class="col-md-4 col-sm-4 col-xs-12">
-            <div class="panel panel-default priceTracking">
-              <div class="panel-body coinPrice">
-                  <p><span class="glyphicon glyphicon-briefcase"></span> Price (Ratedb - Github )</p>
-                  <div class="coin_price">
-                    <h4><span class="glyphicon glyphicon-repeat glyphicon-spin"></span></h4>
+            <div class="col-md-4 col-sm-4 col-xs-12">
+              <div class="panel panel-default priceTracking">
+                <div class="panel-body coinPrice">
+                    <p><i class="bi bi-coin"></i> Price (Ratedb - Github )</p>
+                    <div class="coin_price">
+                      <h4><span class="glyphicon glyphicon-repeat glyphicon-spin"></span></h4>
+                        <div class="bayLPrice">
+                            BAY Liquid: <p class="price_track"></p>
+                        </div>
+                        <div class="bayRPrice hidden">
+                            BAY Reserve: <p class="price_track"></p>
+                        </div>
+                    </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-4 col-sm-4 col-xs-6">
+              <div class="panel panel-default">
+                <div class="panel-body pegIndex">
+                  <h4 title="Peg index: seems to go up lately..."><i class="bi bi-speedometer2"></i> <span class="currentPegIndex"><span class="glyphicon glyphicon-repeat glyphicon-spin"></span></span> <i class="bi bi-arrow-right-short"></i></h4>
+                  <p class="nextPegIndex">Next Peg index is 0</p> 
+                </div>
+              </div>
+            </div>
 
-                      <div class="bayLPrice">
-                          BAY Liquid: <p class="price_track"></p>
-                      </div>
-                      <div class="bayRPrice hidden">
-                          BAY Reserve: <p class="price_track"></p>
-                      </div>
-
-                  </div>
+            <div class="col-md-4 col-sm-4 col-xs-6">
+              <div class="panel panel-default">
+                <div class="panel-body accountInfo">
+                  <h4><i class="bi bi-person-fill"></i> <span class="walletAddress"></span> <a href="#wallet" class="walletLogout logouthide" role="button" data-destroy="true"><i title="Logout" class="bi bi-box-arrow-left hide logoutIcon"></i> </a> </h4>
+                  <p><span class="walletBalance"><a href="#wallet" data-toggle="tab">You are not logged in</a></span></p> 
+                </div>
               </div>
             </div>
-          </div>
-          
-          <div class="col-md-4 col-sm-4 col-xs-6">
-            <div class="panel panel-default">
-              <div class="panel-body pegIndex">
-                <h4 title="Peg index: seems to go up lately..."><span class="glyphicon glyphicon-scale"></span> <span class="currentPegIndex"><span class="glyphicon glyphicon-repeat glyphicon-spin"></span></span> <span class="glyphicon glyphicon-arrow-right"></span></h4>
-                <p class="nextPegIndex">Next Peg index is 0</p> 
-              </div>
-              
-            </div>
-          </div>
-          <div class="col-md-4 col-sm-4 col-xs-6">
-            <div class="panel panel-default">
-              <div class="panel-body accountInfo">
-                
-                <h4><span class="glyphicon glyphicon-user"></span> <span class="walletEmail"></span> <a href="#wallet" class="walletLogout logouthide" role="button" data-destroy="true"><span title="Logout" class="glyphicon glyphicon-log-out hide logoutIcon"></span></a> </h4>
-                <p><span class="walletBalance"><a href="#wallet" data-toggle="tab">You are not logged in</a></span></p> 
-              </div>
-              
-            </div>
-          </div>
           
           
+          </div>
         </div>
       </div>
-    </div>
     </div>
 
 
@@ -211,15 +208,96 @@
       <div class="tab-content">
 
         <div class="tab-pane tab-content active" id="wallet">
-          <div class="row">
-            <div class="col-md-12">
-              <!-- <h2>Bitbay offline Wallet <small> browser based offline wallet</small></h2> !-->
 
-              <!-- User Wallet Login Form !-->
-              <div class="row">
-                <div id="openLogin">
 
-                  <form name="form-signin" id="form-signin" class="form-signin" role="form" action="javascript:;" autocomplete="off">
+          <!-- BitBay Logo 
+          <div class="row justify-content-center">
+            <div class="col-md-6 d-flex justify-content-center">
+              <div class="login-container text-center">
+                <div class="bitbay-logo"><img src="assets/images/bitbay-logo-medium.png" alt="BitBay Logo"></div>
+              </div>
+            </div>
+          </div
+          !-->
+
+
+          <!-- Login Multistep Wizard Box!-->
+          
+           <div class="row flex justify-content-center loginhide">
+            
+            <div class="col-md-6 login-container">
+            <div class="box box-without-top-border">
+            <div class="box-header text-center">
+              <h3 class="box-title no-border hide">Connect!</h3>
+              <div class="bitbay-logo"><img src="assets/images/bitbay-logo-medium.png" alt="BitBay Logo"></div>
+            </div>
+            <!-- /.box-header -->
+            <div class="box-body">
+
+
+            <!-- Back button !-->
+            <div class="btn btn-default hide m-l-1 " id="multistep-wizard-reset">&larr; Back</div>
+
+            <!-- Login Options & Login Navigation !-->
+            <section class="login-box multistep_progress_bar" data-wallet-login-multistep-wizard="options">
+              <div data-multistep-wizard-step="2" class="callout callout-no-border callout-hover no-bottom-border-radius no-bottom-margin cursor-pointer p-2">
+                <div class="d-flex">
+                  <div class="logo-wallet-icon d-flex align-self-center"><i class="bi bi-wallet-fill"></i></div> 
+                  <div class="d-flex flex-column text-left align-self-center p-l-1">
+                    <span class="font-heading font-semibold">Regular Wallet</span> 
+                    <span class="font-body-small text-gray">Connect using browser wallet</span>
+                  </div> 
+                  <i class="bi bi-caret-right-fill align-self-center font-gray ml-auto"></i>
+                </div>
+              </div>
+              
+              <div data-multistep-wizard-step="3" class="callout callout-no-border callout-hover no-top-margin no-bottom-margin  no-bottom-border-radius no-top-border-radius no-border-radius cursor-pointer p-2">
+                <div class="d-flex">
+                  <div class="logo-wallet-icon d-flex align-self-center"><i class="bi bi-wallet-fill"></i></div> 
+                  <div class="d-flex flex-column text-left align-self-center p-l-1">
+                    <span class="font-heading font-semibold">Multisignature Wallet</span>
+                    <span class="font-body-small text-gray">2-of-2 Wallet Address!</span>
+                  </div> 
+                  <i class="bi bi-caret-right-fill align-self-center font-gray ml-auto"></i>
+                </div>
+              </div>
+              
+              <div data-multistep-wizard-step="4" class="callout callout-no-border callout-hover no-top-margin no-bottom-margin  no-bottom-border-radius no-top-border-radius no-border-radius cursor-pointer p-2">
+                <div class="d-flex">
+                  <div class="logo-wallet-icon d-flex align-self-center"><i class="bi bi-key-fill"></i></div> 
+                  <div class="d-flex flex-column text-left align-self-center p-l-1">
+                    <span class="font-heading font-semibold">Login with Private Key</span>
+                    <span class="font-body-small text-gray">Connect using private key!</span>
+                  </div> 
+                  <i class="bi bi-caret-right-fill align-self-center font-gray ml-auto"></i>
+                </div>
+              </div>
+              
+              <div data-multistep-wizard-step="5" class="callout callout-no-border callout-hover no-top-margin no-bottom-margin  no-top-border-radius  cursor-pointer p-2">
+                <div class="d-flex">
+                  <div class="logo-wallet-icon d-flex align-self-center"><i class="bi bi-upload"></i></div> 
+                  <div class="d-flex flex-column text-left align-self-center p-l-1">
+                    <span class="font-heading font-semibold">Import Wallet</span>
+                    <span class="font-body-small text-gray">Import your wallet backup!</span>
+                  </div> 
+                  <i class="bi bi-caret-right-fill align-self-center font-gray ml-auto"></i>
+                </div>
+              </div>
+              
+              
+            </section>
+
+
+
+
+    
+    <!-- Regular Wallet -->
+    <section class="login-box hide" data-wallet-login-multistep-wizard="regular_multisig">
+      <div class="walletLogin">
+
+                  <div class="callout callout-no-border m-1">
+
+                  <form name="form-signin-password" id="form-signin-password" class="form-signin-password" role="form" action="javascript:;" autocomplete="off">
                     <fieldset>
 
                       <div class="form-wallettype">
@@ -289,29 +367,35 @@
                       <div class="form-group input-group form-password">
                         <input id="openPass" name="openPass" type="password" class="form-control" placeholder="Password" required>
                         <span class="input-group-btn">
-														<button class="showKey btn btn-default" type="button">Show</button>
-													</span>
+                            <button class="showKey btn btn-default" type="button">Show</button>
+                          </span>
                       </div>
                       <div class="form-group input-group form-password-confirm">
                         <input id="openPass-confirm" name="openPass-confirm" type="password" class="form-control confirm-input" placeholder="Password Confirm" confirm="#openPass">
                         <span class="input-group-btn">
-														<button class="showKey btn btn-default" type="button">Show</button>
-													</span>
+                            <button class="showKey btn btn-default" type="button">Show</button>
+                          </span>
                       </div>
                       <div class="form-group input-group form-password2 hidden">
                         <input id="openPass2" name="openPass" type="password" class="form-control" placeholder="Password2">
                         <span class="input-group-btn">
-														<button class="showKey btn btn-default" type="button">Show</button>
-													</span>
+                            <button class="showKey btn btn-default" type="button">Show</button>
+                          </span>
                       </div>
                       <div class="form-group input-group form-password2-confirm hidden">
                         <input id="openPass2-confirm" name="openPass-confirm" type="password" class="form-control confirm-input" placeholder="Password2 Confirm" confirm="#openPass2">
                         <span class="input-group-btn">
-														<button class="showKey btn btn-default" type="button">Show</button>
-													</span>
+                            <button class="showKey btn btn-default" type="button">Show</button>
+                          </span>
                       </div>
+                    </form>
+                  </div>
+
+
+
+                  <div class="callout callout-no-border m-1">
                       <div class="form-group">
-                        <div id="openLoginStatus" class="alert alert-danger hidden"></div>
+                        <div class="alert alert-danger hidden walletLoginStatus"><i class="bi bi-exclamation-triangle-fill"></i> </div>
                       </div>
                       <div class="form-group form-confirm-pass checkbox">
                           <label for="confirmPass"><input id="confirmPass" type="checkbox" checked>
@@ -321,73 +405,220 @@
                       <div class="form-group form-accept checkbox">
                         <p class="alert alert-danger">No email/password is stored on our server. If you forget your email or password it CANNOT be recovered! You can print/backup your wallet after you login.</p>
                         
-                        <label for="acceptTerms">
-                          <input id="acceptTerms" type="checkbox"> I have read the <a href="#disclaimer" role="button" class="btn-flat" data-toggle="modal">disclaimer</a> and have stored my login information
+                        <label >
+                          <input class="acceptTerms" type="checkbox"> I have read the <a href="#disclaimer" role="button" class="btn-flat" data-toggle="modal">disclaimer</a> and have stored my login information
                         </label>
                       </div>
                       <div class="form-group" >
                         <span class="button-checkbox checkbox">
-													<label for="remember">
-                          <input id="remember" type="checkbox">Stay Logged in (until browser tab closes)</label>
-													<button type="button" class="btn-flat hidden" data-color="info">Remember Me</button>
-													<select class="form-control hide" id="rememberMe">
-														<option value="false" selected="selected">No</option>
-														<option value="true">Yes</option>
-													</select>
-												</span>
+                          <label>
+                          <input  class="loginRemember" type="checkbox">Stay Logged in (until browser tab closes)</label>
+                          <button type="button" class="btn-flat hidden" data-color="info">Remember Me</button>
+                          <select class="form-control hide rememberMe" id="rememberMe">
+                            <option value="false" selected="selected">No</option>
+                            <option value="true">Yes</option>
+                          </select>
+                        </span>
                       </div>
                       <div class="form-group form-submit">
-                        <input id="openBtn" type="submit" class="btn-flatbay btn-flatbay-inactive" value="Load/Create Wallet">
+                        <input type="submit" class="btn-flatbay btn-flatbay-inactive loginButton" value="Load/Create Wallet">
                       </div>
-                      <div id="errormessages"></div>
-                    </fieldset>
-                  </form>
-                </div>
-              </div>
 
-              <!-- Modal HTML -->
-              <div id="disclaimer" class="modal fade">
-                <div class="modal-dialog">
-                  <div class="modal-content">
-                    <div class="modal-header danger-area">
-                      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                      <h2><span class="glyphicon glyphicon-warning-sign"></span> Warning - Disclaimer</h2>
                     </div>
-                    <div class="modal-body">
-                      <div class="form-group form-notice">
-                        <h3>Understand the Risks in Using the BitBay Web Wallet</h3>
-                        <p>
-                          Cryptocurrencies provide people with the power to control and own their money. Cryptocurrency wallets are not a bank. Moving away from the use of the typical banking system requires new responsibilities upon cryptocurrency users. We highly recommend using the Markets wallet vs this web wallet for the sake of added security. This BitBay web wallet is a free, open-source, client-side interface. It allows you to transact and store BitBay without the need to run a full BitBay node. The web wallet has 2 formats to access it, either through a stand alone offline wallet or through a legitimate website host for the sake of hosting multisignature services. <strong>What makes it so secure</strong> is that <strong>legitimate website hosts</strong> do not in any way store any private data on their server for accessing the wallet - the wallet is completely independent of the website. This wallet grants the ability for websites to provide simplified payment services without any security risk on their part for hosting it. In other words, if the website is ever hacked, your wallet will still be safe! However, <strong>what makes it insecure</strong> is when entering your login credentials on a fraudulent website it will result in you losing your coins. Scammers tend to use fear tactics to startle your common sense. Any emails received pertaining to the security of your web wallet will <strong>ALWAYS be malicious in nature</strong> and responding to these emails could lead to the <strong>LOSS OF YOUR COINS!</strong>
-                        </p>
-                        <h3>Notice of your Private Login Key</h3>
-                        <p>
-                          When creating new accounts, emails are requested because they provide a failsafe against duplicating passwords, since no two email addresses are the same. However, understand that IN NO WAY DOES THIS PROVIDE YOU WITH A FAILSAFE FOR PASSWORD RECOVERY. We highly recommend creating a new email account just for the sake of creating your web wallet - and do not use the account for sending and receiving emails. Different email &nbsp; password combinations are what create distinctive individual wallets. Be careful when entering your details as LOST LOGIN CREDENTIALS CAN NOT BE RECOVERED! We do not store any data about our users, not even email addresses. We do not confirm if an email is valid. It is only used to create your private key.
-                        </p>
-                      </div>
-                    </div>
-                    <div class="modal-footer">
-                      <button type="button" class="btn-flatbay" data-dismiss="modal">I understand the risks</button>
-                    </div>
-                  </div>
+
+                    
+                  
                 </div>
-              </div>
+    </section>
+
+    <section class="callout callout-no-border m-1 login-box hide" data-wallet-login-multistep-wizard="empty">
+    </section>
+    <!-- Multisig Wallet -->
+    <section class="login-box hide" data-wallet-login-multistep-wizard="private_key">
+
+      <div class="callout callout-no-border m-1">
+        <div class="form-group input-group">
+          <span class="input-group-btn">
+            <button class="input-group-btn-icon btn btn-default" type="button"><i class="bi bi-key-fill"></i></button>
+          </span>
+          <input name="openPrivateKey" type="password" class="form-control" placeholder="Private Key 1" required>
+          <span class="input-group-btn">
+            <button class="showKey btn btn-default" type="button">Show</button>
+          </span>
+        </div>
+        <div class="form-group input-group hidden">
+          <span class="input-group-btn">
+            <button class="input-group-btn-icon btn btn-default" type="button"><i class="bi bi-key-fill"></i></button>
+          </span>
+          <input name="openPrivateKey" type="password" class="form-control" placeholder="Private Key 2">
+          <span class="input-group-btn">
+            <button class="showKey btn btn-default" type="button">Show</button>
+          </span>
+        </div>
+
+          <button id="loginExtraPrivateKey" type="button" class="btn btn-default btn-block">+ Add second private key <i class="bi bi-key-fill"></i> </button>
+
+      </div>
+
+        <div class="callout callout-no-border m-1" >
+          <div class="form-group">
+            <div class="alert alert-danger hidden walletLoginStatus"><i class="bi bi-exclamation-triangle-fill"></i></div>
+          </div>
+
+          
+          <div class="form-group form-accept checkbox">
+            <p class="alert alert-danger">No data is stored on our server. If you forget your private key it CANNOT be recovered! You can print/backup your wallet after you login.</p>
+            
+            <label>
+              <input class="acceptTerms" type="checkbox"> I have read the <a href="#disclaimer" role="button" class="btn-flat" data-toggle="modal">disclaimer</a>
+            </label>
+          </div>
+
+          <div class="form-group" >
+            <span class="button-checkbox checkbox">
+              <label >
+              <input class="loginRemember" type="checkbox">Stay Logged in (until browser tab closes)</label>
+              <button type="button" class="btn-flat hidden" data-color="info">Remember Me</button>
+              <select class="form-control hide rememberMe" name="rememberMe">
+                <option value="false" selected="selected">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </span>
+          </div>
+          
+          <div class="form-group form-submit">
+            <input id="openBtnPrivateKey" type="submit" class="btn-flatbay btn-flatbay-inactive" value="Load/Create Wallet">
+          </div>
+
+        </div>
+    </section>
+    <section class="login-box hide" data-wallet-login-multistep-wizard="import_wallet">
+      
+      <!-- Drag & Drop Backup File -->
+      <div class="callout callout-no-border m-1">
+        <div class="form-group file-drop-area importfile1">
+          <span class="fake-btn">Import File (Private Key 1) <i class="bi bi-key-fill"></i></span>
+          <span class="file-msg">or drag and drop the file here</span>
+          <input class="file-input" type="file">
+        </div>
+
+        <div class="form-group  file-drop-area hidden importfile2">
+          <span class="fake-btn">Import File (Private Key 2) <i class="bi bi-key-fill"></i></span>
+          <span class="file-msg">or drag and drop the file here</span>
+          <input class="file-input" type="file">
+        </div>
+
+        <button id="loginExtraImportFile" type="button" class="btn btn-default btn-block">+ Add second import file <i class="bi bi-key-fill"></i> </button>
+
+      </div>
+
+      <div class="callout callout-no-border m-1" >
+
+        <div class="form-group">
+          <div class="alert alert-danger hidden walletLoginStatus"><i class="bi bi-exclamation-triangle-fill"></i></div>
+        </div>
+
+        
+        <div class="form-group form-accept checkbox">
+          <p class="alert alert-danger">No Data is stored in our server!</p>
+
+          <label>
+            <input class="acceptTerms" type="checkbox"> I have read the <a href="#disclaimer" role="button" class="btn-flat" data-toggle="modal">disclaimer</a> 
+          </label>
+
+        </div>
+
+        <div class="form-group" >
+          <span class="button-checkbox checkbox">
+            <label >
+            <input class="loginRemember" type="checkbox">Stay Logged in (until browser tab closes)</label>
+            <button type="button" class="btn-flat hidden" data-color="info">Remember Me</button>
+            <select class="form-control hide rememberMe" name="rememberMe">
+              <option value="false" selected="selected">No</option>
+              <option value="true">Yes</option>
+            </select>
+          </span>
+        </div>
+        
+        <div class="form-group form-submit">
+          <input id="openBtnImportWallet" type="submit" class="btn-flatbay btn-flatbay-inactive" value="Load/Create Wallet">
+        </div>
+
+      </div>
+
+    </section>
+    
+    
+    
+
+
+
+
+            </div>
+            <!-- /.box-body -->
+            <div class="box-footer text-center">
+              Bitbay Web Wallet <span class="walletVersion"></span>
+            </div>
+            <!-- /.box-footer -->
+          </div>
+          </div>
+          
+            
+            </div>
+          
+
+
+
+
+
+          <!-- Old Login !-->
+          <div class="row">
+            <div class="col-md-12">
 
               <!-- User Wallet !-->
               <div id="openWallet" class="hidden">
+                <!--
+                <div class="row publicKeySortNotification hidden">
+                    <div class="col-md-12">
+                      <div class="row">
+                          <div class="callout callout-danger no-margin">
+                              <h4>Important notification!</h4>
+                              Your 2 private keys can generate 2 multisig addresses. <br>
+                              BitBay Client wallet is using sorted public keys for addresses. If you want to import your wallet to BitBay Client wallet then they need to be sorted.
+                              <hr>
+                              <div class="publicKeyIsSorted hidden">
+                                <div class="alert  alert-success">
+                                  You can import this address to BitBay Client wallet!
+                                </div>
+                              </div>
+                              <div class="publicKeyIsUnSorted hidden">
+                                <div class="alert  alert-warning">
+                                  This address has unsorted public keys and can not be used with BitBay Client wallet, however it is still valid.
+                                </div>
+
+                                
+                              </div>
+
+                              
+                              <hr>
+                              Notice that you can always switch your public keys order and have access to both addresses.<br>
+                              <button class="btn btn-default switchAddress">Switch address</button>
+                              <button class="btn btn-default toggleTheme">Toggle Theme</button>
+
+                          </div>
+                      </div>
+                    </div>
+                </div>
+              -->
+
                 <div class="row">
 
                   <!-- Wallet Panel -->
-                  <div class="row">
-                    <!--
-											<div id="warning" class="col-md-12">
-												<div class="col-md-12">
-													<strong>IMPORTANT NOTICE: </strong> The BitBay Web Wallet is currently in development mode while we update it to work with the Dynamic Peg protocol.  Your funds are safe, but we advise you to use the software to participate in the network. If you want to access funds in the Web wallet please read the <strong><a href="https://bitbay.market/forum-archive/t/how-to-import-your-bitbay-web-wallet-private-key-into-the-bitbay-qt-wallet/2227.html">support article</a></strong>
-												</div>
-											</div>
--->
-
                   
-                    
+                  <div class="">
+
+
+
                     
                     <!-- Wallet User Panel -->
                     
@@ -408,54 +639,24 @@
                             <li class="">
                               <a data-toggle="tab" href="#walletBackup">Wallet Backup</a>
                             </li>
-                            <li class="dropdown hidden">
-                              <a class="dropdown-toggle" data-toggle="dropdown" href="#">Bitbay <span class="caret"></span></a>
-                              <ul class="dropdown-menu">
-                                <li>
-                                  <a href="http://bitbay.market" target="_blank">Bitbay Website</a>
-                                </li>
-                                <li class="divider"></li>
-                                <li>
-                                  <a href="http://explorer.bitbay.market" target="_blank">Bitbay Blockexplorer</a>
-                                </li>
-                                <li class="divider"></li>
-                                <li>
-                                  <a href="https://bitcointalk.org/index.php?topic=890531.0" target="_blank">Bitbay - Bitcointalk</a>
-                                </li>
-                                <li class="divider"></li>
-                                <li>
-                                  <a href="https://twitter.com/bitbayofficial" target="_blank">Bitbay - Twitter</a>
-                                </li>
-                              </ul>
-                            </li>
                           </ul>
 
 
-                          <div class="tab-content" id="WalletTabContent">
+                          <div class="tab-content box box-without-top-border" id="WalletTabContent">
                             <div class="tab-pane fade" id="walletBackup">
                               <div class="backuptext">
                                 The following information can be used to recover your account and funds. You can manually copy them or print them and store them in a safe place.
                                 <span class="warning">Do not share them with anyone as it provides access to your wallet and therefore your funds.</span>
                               </div>
                               <div class="backupfunctions">
-                                <a href="#print" id="print" class="ul">Print Wallet Information  <span class="glyphicon glyphicon-print"></span></a>
+                                <a href="#print" id="print" class="ul">Print Wallet Information  <i class="bi bi-printer-fill"></i></a>
                                 <br>
                               </div>
                               <div id="printArea" class="hidden">
                                 in here will populate with wallet info
                               </div>
                               <div id="walletKeys">
-                                <div class="share-yes">
-                                  <label>Address (Share)</label>
-                                  <input class="form-control address can-copy" type="text" readonly>
 
-                                  <label class="wallet_multisig_keys">RedeemScript (Share)</label>
-                                  <input class="form-control can-copy redeemScript_wallet wallet_multisig_keys" type="text" readonly>
-
-                                  <label class="wallet_maybe_multisig_keys">Public key (Share)</label>
-                                  <input class="form-control pubkey wallet_maybe_multisig_keys can-copy" type="text" readonly>
-                                  <input class="form-control pubkey2 wallet_multisig_keys wallet_maybe_multisig_keys can-copy" type="text" readonly>
-                                </div>
 
                                 <div class="share-no">
                                   <label>Private key - WIF key (Private - Don't share)</label>
@@ -494,22 +695,7 @@
                                 <p class="text-muted">This page uses javascript to generate your addresses and sign your transactions within your browser, this means we <i>never</i> receive your private keys, this can be independently verified by reviewing the source code on <a href="https://github.com/bitbaymarket/web-wallet" target="_blank">github</a>.</p>
                               </div>
                             </div>
-                            <div class="tab-pane fade" id="walletInfo">
-                              - <a class="ul" href="https://bitcointalk.org/index.php?topic=890531.0" target="_blank">Bitcointalk</a>
-                              <br> - <a class="ul" href="https://twitter.com/bitbaytalk" target="_blank">Twitter</a>
-                              <br> - <a class="ul" href="https://www.facebook.com/bitbaymarket" target="_blank">Facebook</a>
-                              <br> - <a class="ul" href="https://plus.google.com/communities/114750118216930193130" target="_blank">Google+</a>
-                              <br> - <a class="ul" href="http://bitbay.market/" target="_blank">The new and improved Official Site!</a>
-                              <br> - <a class="ul" href="http://bitbaymarket.net/" target="_blank">The original Mirror Site linking directly to Halo ftp</a>
-                              <br>
-                              <br> Telegram: <a href="https://t.me/bitbayofficial" target="_blank">@bitbayofficial</a>
-                              <br> Slack: <a href="http://bitbay.slack.com/" target="_blank">http://bitbay.slack.com/</a>
-                              <br>
-                              <br> Want to see where all the action is?
-                              <br> Most of the fun, testing and core community chat happens on slack! Please join us there by using this link:
-                              <br>
-                              <a class="ul" href="http://bitbay.market/wp-login.php?action=slack-invitation" target="_blank">http://bitbay.market/wp-login.php?action=slack-invitation</a>
-                            </div>
+
                             <div class="tab-pane fade active in" id="walletSpendTab">
                               <div id="walletSpend">
           
@@ -531,7 +717,7 @@
                                         <input class="form-control addressTo" data-original-title="" title="Address to send to" type="text">
                                         <span class="input-group-btn">
 																						<button class="btn btn-info2 qrcodeScanner" type="button" data-toggle="modal" data-target="#modalQrcodeScanner" >
-																						<span class="glyphicon glyphicon-camera"></span></button>
+																						<i class="bi bi-camera-fill"></i></button>
                                         </span>
                                       </div>
 
@@ -541,7 +727,7 @@
                                       <div class="input-group">
                                         <input class="form-control form-control-div amount" data-original-title="" placeholder="0.00000000" title="Amount to send" type="text"><span class="input-group-addon amountCoinSymbol">Coin</span>
                                       </div>
-                                    </div><a class="addressAdd" href="javascript:;" title="Add recipient's address" data-toggle="tooltip"><span class="glyphicon glyphicon-plus"></span></a>
+                                    </div><a class="addressAdd" href="javascript:;" title="Add recipient's address" data-toggle="tooltip"><i class="bi bi-plus"></i></span></a>
                                     <br>
                                     <br>
                                   </div>
@@ -555,7 +741,7 @@
                                     </div>
                                   </div>
                                   <div class="col-sm-4">
-                                    <label>BitBay Development Fund <span class="glyphicon glyphicon-heart"></span></label>
+                                    <label>BitBay Development Fund <i class="bi bi-suit-heart-fill"></i></label>
                                     <div class="input-group">
                                       <input class="form-control form-control-div" id="developerDonation" placeholder="0.00000000" type="text" value="0" title="The amount to donate to the BitBay Development Fund">
                                       <span class="input-group-addon amountCoinSymbol">Coin</span>
@@ -570,9 +756,40 @@
                                 </div>
                               </div>
                             </div>
-                            <div class="tab-pane fade" id="walletKeysTab">
-                              <div id="walletKeysCopy">
-                              </div>
+                            <div class="tab-pane fade walletPubKeys" id="walletKeysTab">
+                              
+                                <label>Address (Share)</label>
+                                
+                                <div class="input-group" data-original-title="" title="">
+                                  <input type="text" class="form-control address can-copy">
+                                  <span class="input-group-btn" data-original-title="" title="">
+                                    <button class="btn btn-default copy-input" type="button" >Copy</button>
+                                  </span>
+                                </div>
+
+                                <label class="wallet_multisig_keys">RedeemScript (Share)</label>
+                                <div class="input-group" data-original-title="" title="">
+                                  <input type="text" class="form-control can-copy redeemScript_wallet wallet_multisig_keys">
+                                  <span class="input-group-btn" data-original-title="" title="">
+                                    <button class="btn btn-default copy-input" type="button" >Copy</button>
+                                  </span>
+                                </div>
+
+
+                                <label class="wallet_maybe_multisig_keys">Public key (Share)</label>
+                                <div class="input-group" data-original-title="" title="">
+                                  <input type="text" class="form-control pubkey wallet_maybe_multisig_keys can-copy">
+                                  <span class="input-group-btn" data-original-title="" title="">
+                                    <button class="btn btn-default copy-input" type="button" >Copy</button>
+                                  </span>
+                                </div>
+                                <div class="input-group" data-original-title="" title="">
+                                  <input type="text" class="form-control pubkey2 wallet_multisig_keys wallet_maybe_multisig_keys can-copy">
+                                  <span class="input-group-btn" data-original-title="" title="">
+                                    <button class="btn btn-default copy-input" type="button" >Copy</button>
+                                  </span>
+                                </div>
+
                             </div>
                           </div>
                         </div>
@@ -580,19 +797,22 @@
                       <div class="col-md-4">
                         <div class="bs-component panel-right">
                           <!-- QR Code -->
-                          <div class="panel panel-default panel-qrcode">
+                          <div class="panel panel-default box box-without-top-border panel-qrcode">
                             <div class="panel-heading">
                               <label>Your Address:</label>
+                            </div>
+                            <div class="panel-body text-center ">
+
+
+                              <div id="walletQrCode"></div>
+                              <hr>
                               <span class="hide" id="walletAddress"></span>
                               <a href="#" id="walletAddressExplorer" target="_blank"></a>
-                            </div>
-                            <div class="panel-body text-center">
-                              <div id="walletQrCode"></div>
                             </div>
                           </div>
                           
                           <!-- Balance & Pie Chart -->
-                          <div class="panel panel-default panel-balance">
+                          <div class="panel panel-default panel-balance box box-without-top-border">
                             <div class="panel-body">
 
                               
@@ -681,10 +901,17 @@
               <input type="checkbox" id="newCompressed" class="checkbox-inline" checked> Compress <span class="text-muted">(recommended)</span></label>
           </div>
           <div class="checkbox">
-            <label>
-              <input type="checkbox" id="newBrainwallet" class="checkbox-inline"> Custom Seed or Brain Wallet</label>
-            <input type="text" class="form-control hidden" id="brainwallet">
+            <label><input type="checkbox" id="newBrainwalletCheck" class="checkbox-inline"> Custom Seed or Brain Wallet</label>
+            
+            <div class="input-group" data-original-title="" title="">
+              <input type="text" class="form-control hidden" id="brainwallet">
+              <span class="input-group-btn hidden" data-original-title="" title="">
+                  <button class="btn btn-default generatePassword" type="button" data-input-for="brainwallet" data-original-title="" title="">Generate Password</button>
+                </span>
+            </div>
           </div>
+
+
 
           <div class="checkbox">
             <label>
@@ -783,7 +1010,7 @@
               <div class="col-xs-11">
                 <input type="text" class="form-control pubkey">
               </div>
-              <a href="javascript:;" class="pubkeyAdd"><span class="glyphicon glyphicon-plus"></span></a>
+              <a href="javascript:;" class="pubkeyAdd"><i class="bi bi-plus"></i></a>
               <br>
               <br>
             </div>
@@ -953,10 +1180,17 @@
           <p>You can use the advanced options below to generate different kinds of master addresses.</p>
 
           <div class="checkbox">
-            <label>
-              <input type="checkbox" id="newHDBrainwallet" class="checkbox-inline"> Custom Seed or Brain Wallet</label>
-            <input type="text" class="form-control hidden" id="HDBrainwallet">
+            <label><input type="checkbox" id="newHDBrainwalletCheck" class="checkbox-inline"> Custom Seed or Brain Wallet</label>
+            
+            <div class="input-group" data-original-title="" title="">
+              <input type="text" class="form-control hidden" id="HDBrainwallet">
+              <span class="input-group-btn hidden" data-original-title="" title="">
+                  <button class="btn btn-default generatePassword" type="button" data-input-for="HDBrainwallet" data-original-title="" title="">Generate Password</button>
+                </span>
+            </div>
           </div>
+
+          
 
           <input type="button" class="btn-flatbay " value="Generate" id="newHDKeysBtn">
         </div>
@@ -1002,15 +1236,12 @@
           <div class="checkbox">
             <label><input type="checkbox" id="newMnemonicBrainwalletCheck" class="checkbox-inline"> BIP39 Password (recommended)</label>
             
-
             <div class="input-group" data-original-title="" title="">
               <input type="text" class="form-control hidden" id="MnemonicBrainwallet">
               <span class="input-group-btn hidden" data-original-title="" title="">
                   <button class="btn btn-default generatePassword" type="button" data-input-for="MnemonicBrainwallet" data-original-title="" title="">Generate Password</button>
                 </span>
             </div>
-
-
           </div>
 
           <input type="button" class="btn-flatbay " value="Generate" id="newMnemonicKeysBtn">
@@ -1138,7 +1369,7 @@
                     </div>
                   </div>
                   <div class="col-xs-1">
-                    <a href="javascript:;" class="addressAddTo"><span class="glyphicon glyphicon-plus"></span></a>
+                    <a href="javascript:;" class="addressAddTo"><i class="bi bi-plus"></i></a>
                   </div>
                 </div>
               </div>
@@ -1176,7 +1407,7 @@
                     <label><abbr title="Output Index">oN</abbr></label>
                   </div>
                   <div class="col-xs-1">
-                    <label><a href="javascript:;" class="txidAdd" title="Add new TXid input"><span class="glyphicon glyphicon-plus"></span></a></label>
+                    <label><a href="javascript:;" class="txidAdd" title="Add new TXid input"><i class="bi bi-plus"></i></a></label>
                   </div>
                 </div>
               </div>
@@ -1214,7 +1445,7 @@
                     </div>
                     <div class="col-xs-1 ">
                       
-                      <a href="javascript:;" class="txidClear" title="Remove TXid input" ><span class="glyphicon glyphicon-minus"></span></a>
+                      <a href="javascript:;" class="txidClear" title="Remove TXid input" ><i class="bi bi-dash"></i></a>
                     </div>
 
                   </div>
@@ -1228,13 +1459,15 @@
 
           <br>
 
-          <div class="row">
-            <div class="col-xs-3">
+          
+          <div class="row-no-padding">
+            <div class="col-xs-5 col-md-3">
               <label><abbr title="What is not spent will be used as a transaction fee">Transaction Fee</abbr>&nbsp;&nbsp;<a href="#no" target="_blank"><span class="glyphicon glyphicon-question-sign"></span></a></label>
               <div class="input-group">
                 <input id="transactionFee" class="form-control form-control-div amount" readonly placeholder="0.00000000" type="text"> <span class="input-group-addon amountCoinSymbol">Coin</span>
               </div>
             </div>
+
           </div>
 
           <br>
@@ -1268,7 +1501,7 @@
           <hr>
           <div id="verifyStatus" class="alert alert-danger hidden"><span class="glyphicon glyphicon-exclamation-sign"></span> Unable to decode</div>
 
-          <input type="button" value="Submit" class="btn-flatbay " id="verifyBtn">
+          <input type="button" value="Submit" class="btn-flatbay" id="verifyBtn">
           <br>
 
           <div class="hidden verifyData" id="verifyRsData">
@@ -1425,23 +1658,32 @@
             <p><span style="float:right"><a href="" target="_blank" class="verifyLink" title="Link to this page"><span class="glyphicon glyphicon-link"></span></a>
               </span>The key <small><span class="hdKey hidden"></span></small> has been decoded</p>
             <div class="row">
-              <div class="col-md-2">
+              <div class="col-md-12">
                 <b>Type</b>
+                <h4 class="key_type"></h4>
                 <br>
-                <span class="key_type"></span>
               </div>
+            </div>
+            <div class="row">
+              
 
-              <div class="col-md-5">
+              <div class="col-md-4">
                 <b>Chain Code</b>
                 <br>
                 <input type="text" class="form-control chain_code" value="" readonly>
               </div>
 
 
-              <div class="col-md-5">
-                <b>Key</b>
+              <div class="col-md-4">
+                <b>Private Key (WIF)</b>
                 <br>
                 <input type="text" class="form-control hdwifkey" value="" readonly>
+              </div>
+
+              <div class="col-md-4">
+                <b>Private Key (Hex)</b>
+                <br>
+                <input type="text" class="form-control hdhexkey" value="" readonly>
               </div>
             </div>
 
@@ -1648,7 +1890,7 @@
         <div class="tab-pane tab-content" id="network">
           
           <!-- Network panel info-->
-          <div class="row topPanel  ">
+          <div class="topPanel  ">
             <div class="col-md-12 ">
               <div class="row">
                 <div class="bs-component">
@@ -1656,7 +1898,7 @@
                 <div class="col-md-4 col-sm-4 col-xs-6">
                   <div class="panel panel-default">
                     <div class="panel-body pegIndex">
-                      <h4 title="Peg index: seems to go up lately..."><span class="glyphicon glyphicon-scale"></span> <span class="currentPegIndex"><span class="glyphicon glyphicon-repeat glyphicon-spin"></span></span> <span class="glyphicon glyphicon-arrow-right"></span></h4>
+                      <h4 title="Peg index: ..."><i class="bi bi-speedometer2"></i> <span class="currentPegIndex"><span class="glyphicon glyphicon-repeat glyphicon-spin"></span></span> <span class="glyphicon glyphicon-arrow-right"></span></h4>
                       <p class="nextPegIndex">Next Peg index is 0</p> 
                     </div>
                     
@@ -1806,16 +2048,8 @@
               <br>
               <p class="text-muted">Select which network you'd like to use for key pair generation.</p>
               <select class="form-control" id="coinjs_coin">
-                <option value="bitbay_mainnet" rel="0x19;0x99;0x55;0x02cfbf60;0x02cfbede;explorer.bitbay.market;explorer.bitbay.market;true;BAY">Bitbay (mainnet)</option>
-
-                <option value="bitcoin_mainnet" rel="0x00;0x80;0x05;0x488b21e;0x488ade4;coinb.in;coinb.in;false;BTC">Bitcoin (mainnet)</option>
-
-                <option value="dogecoin_mainnet" rel="0x1e;0x9e;0x16;0x0827421e;0x089944e4;chain.so_dogecoin;chain.so_dogecoin;false;DOGE">Dogecoin (mainnet)</option>
-                <option value="carboncoin_mainnet" rel="0x2f;0xaf;0x05;0x488b21e;0x488ade4;cryptoid.info_carboncoin;cryptoid.info_carboncoin;false;CARB">Carboncoin (mainnet)</option>
-                <option value="shadowcash_mainnet" rel="0x3f;0xbf;0x7d;0xee80286a;0xee8031e8;false;false;false;SDC">ShadowCash (mainnet)</option>
-                <option value="bitcoin_testnet" rel="0x6f;0xef;0xc4;0x043587cf;0x04358394;false;false;false;BTC_testnet">BitBay (testnet)</option>
-
-                <option value="custom" rel="0x00;0x80;0x05;0x488b21e;0x488ade4;false;false;false;Custom">Custom</option>
+                <option value="bitbay_mainnet" rel="0x19;0x99;0x55;0x02cfbede;0x02cfbf60;explorer.bitbay.market;explorer.bitbay.market;true;BAY">BitBay (mainnet)</option>
+                <option value="custom" rel="0x19;0x99;0x55;0x02cfbede;0x02cfbf60;;false;false;false;Custom">Custom</option>
               </select>
             </div>
           </div>
@@ -1902,12 +2136,6 @@
               <p class="text-muted">Select the network you wish to broadcast the transaction via</p>
               <select class="form-control" id="coinjs_broadcast">
                 <option value="explorer.bitbay.market"> explorer.bitbay.market (Bitbay)</option>
-                <option value="coinb.in">coinb.in (Bitcoin mainnet)</option>
-                <option value="chain.so_bitcoinmainnet"> Chain.so (Bitcoin mainnet)</option>
-                <option value="blockcypher_bitcoinmainnet"> Blockcypher.com (Bitcoin mainnet)</option>
-
-                <option value="chain.so_dogecoin"> Chain.so (Dogecoin)</option>
-                <option value="cryptoid.info_carboncoin"> Cryptoid.info (Carboncoin)</option>
               </select>
             </div>
           </div>
@@ -1921,11 +2149,6 @@
               <p class="text-muted">Select the network you wish to retreive your unspent inputs from</p>
               <select class="form-control" id="coinjs_utxo">
                 <option value="explorer.bitbay.market">explorer.bitbay.market (Bitbay)</option>
-                <option value="coinb.in">coinb.in (Bitcoin mainnet)</option>
-
-                <option value="chain.so_litecoin"> Chain.so (Litecoin)</option>
-                <option value="chain.so_dogecoin"> Chain.so (Dogecoin)</option>
-                <option value="cryptoid.info_carboncoin"> Cryptoid.info (Carboncoin)</option>
               </select>
             </div>
           </div>
@@ -2064,9 +2287,9 @@
     </div>
   </div>
 
-  <div id="footer" class="container-fluid2">
+  <div id="footer">
     <div class="container">
-      <div class="row">
+      <div class="row-no-padding">
         <div class="col-sm-12 footer-inner">
           <div class="social-icon-group">
             <a href="https://bitbay.market" class="social-icon w-inline-block"><img src="favicon.png" width="30"></a>
@@ -2086,7 +2309,7 @@
 
 
   <!-- wallet confirm send modal -->
-  <div class="modal fade" id="modalWalletConfirm" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal fade" id="modalWalletConfirm" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -2095,7 +2318,7 @@
         </div>
 
         <div class="modal-body">
-          <p>You are about to send a transaction to the value of <span id="spendAmount">0.00</span> BAY.<br>
+          <p>You are about to send a transaction to the value of <span id="spendAmount">0.00</span> <span class="amountCoinSymbolCurrent"></span>.<br>
           Would you really like to send this amount?</p>
   
           
@@ -2255,26 +2478,108 @@
   </div>
   <!-- warning (fee) modal -->
 
+  <!-- Disclaimer modal -->
+  <div id="disclaimer" class="modal fade">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header danger-area">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          
+          <h3 class="modal-title"><i class="bi bi-exclamation-circle-fill"></i> Warning - Disclaimer</h3>
+        </div>
+        <div class="modal-body">
+          <div class="form-group form-notice">
+            <h3>Understand the Risks in Using the BitBay Web Wallet</h3>
+            <p>
+              Cryptocurrencies provide people with the power to control and own their money. Cryptocurrency wallets are not a bank. Moving away from the use of the typical banking system requires new responsibilities upon cryptocurrency users. We highly recommend using the Markets wallet vs this web wallet for the sake of added security. This BitBay web wallet is a free, open-source, client-side interface. It allows you to transact and store BitBay without the need to run a full BitBay node. The web wallet has 2 formats to access it, either through a stand alone offline wallet or through a legitimate website host for the sake of hosting multisignature services. <strong>What makes it so secure</strong> is that <strong>legitimate website hosts</strong> do not in any way store any private data on their server for accessing the wallet - the wallet is completely independent of the website. This wallet grants the ability for websites to provide simplified payment services without any security risk on their part for hosting it. In other words, if the website is ever hacked, your wallet will still be safe! However, <strong>what makes it insecure</strong> is when entering your login credentials on a fraudulent website it will result in you losing your coins. Scammers tend to use fear tactics to startle your common sense. Any emails received pertaining to the security of your web wallet will <strong>ALWAYS be malicious in nature</strong> and responding to these emails could lead to the <strong>LOSS OF YOUR COINS!</strong>
+            </p>
+            <h3>Notice of your Private Login Key</h3>
+            <p>
+              When creating new accounts, emails are requested because they provide a failsafe against duplicating passwords, since no two email addresses are the same. However, understand that IN NO WAY DOES THIS PROVIDE YOU WITH A FAILSAFE FOR PASSWORD RECOVERY. We highly recommend creating a new email account just for the sake of creating your web wallet - and do not use the account for sending and receiving emails. Different email &nbsp; password combinations are what create distinctive individual wallets. Be careful when entering your details as LOST LOGIN CREDENTIALS CAN NOT BE RECOVERED! We do not store any data about our users, not even email addresses. We do not confirm if an email is valid. It is only used to create your private key.
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-flatbay" data-dismiss="modal">I understand the risks</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Disclaimer modal -->
+
+  <!-- Advanced modal -->
+  <div id="advanced" class="modal fade" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header danger-area">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          
+          <h3 class="modal-title"><i class="bi bi-gear-fill"></i> Advanced</h3>
+        </div>
+        <div class="modal-body">
+          <div class="callout callout-danger no-margin switch_pubkeys hidden">
+              <h4>Important notification!</h4>
+              Your 2 private keys can generate 2 multisig addresses. <br>
+              BitBay Client wallet is using sorted public keys for addresses. If you want to import your wallet to BitBay Client wallet then they need to be sorted.
+              <hr>
+              <div class="publicKeyIsSorted hidden">
+                <div class="alert  alert-success">
+                  You can import this address to BitBay Client wallet!
+                </div>
+              </div>
+              <div class="publicKeyIsUnSorted hidden">
+                <div class="alert  alert-warning">
+                  This address has unsorted public keys and can not be used with BitBay Client wallet, however it is still valid.
+                </div>
+
+                
+              </div>
+
+              
+              <hr>
+              Notice that you can always switch your public keys order and have access to both addresses.<br>
+              <button class="btn btn-default switchAddress">Switch address</button>
+          </div>
+          <br>
+          <div class="callout callout-success no-margin">
+            <p>Design Templates will be added sooner or later :)
+              <hr>
+            <button class="btn btn-default toggleTheme">Toggle Theme</button>
+          </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Advanced modal -->
+
+
+  <!-- decrypt encrypted text (private key)  modal body -->
+  <div class="decryptPrivateKey hidden">
+    <div class="callout callout-no-border m-1 ">
+      <label class="form-control" >Secret Key:</label>
+      <div class="form-group input-group">
+        <input name="secretKey" type="password" class="form-control secretKey" placeholder="Private Key" required>
+        <span class="input-group-btn">
+          <button class="showKey btn btn-default" type="button">Show</button>
+        </span>
+      </div>
+      <div class="walletDecryptStatus hidden">
+        <hr class="">
+        <div class="alert alert-danger">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- decrypt secretkey modal -->
+
+
 
   <div class="hidden" id="entropybucket"></div>
 
-  <script>
-    (function(i, s, o, g, r, a, m) {
-      i['GoogleAnalyticsObject'] = r;
-      i[r] = i[r] || function() {
-        (i[r].q = i[r].q || []).push(arguments)
-      }, i[r].l = 1 * new Date();
-      a = s.createElement(o),
-        m = s.getElementsByTagName(o)[0];
-      a.async = 1;
-      a.src = g;
-      m.parentNode.insertBefore(a, m)
-    })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
-    ga('create', 'UA-3386745-35', 'auto');
-    ga('send', 'pageview');
-  </script>
-
-  <script type="text/javascript" src="assets/js/custom.js?v=1.13"></script>
+  <script type="text/javascript" src="assets/js/custom.js?v=1.14"></script>
   <script type="text/javascript" src="assets/js/pnotify.custom.min.js"></script>
 </body>
 
