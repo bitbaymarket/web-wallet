@@ -1,0 +1,99 @@
+{
+  "background_color": "#FFFFFF",
+  "description": "A Bitbay Wallet written in Javascript. Supports Multisig, Custom Transactions, nLockTime and more!",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "BitBay Mobile Wallet",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "BitBay Wallet",
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "categories": [],
+  "screenshots": [],
+  "icons": [
+    {
+      "src": "https://anoxxxy.github.io/bitbay-webwallet/assets/images/favicon/favicon.ico",
+      "sizes": "16x16 32x32 64x64"
+    },
+    {
+      "src": "https://anoxxxy.github.io/bitbay-webwallet/assets/images/favicon/favicon-192.png",
+      "type": "image/png",
+      "sizes": "196x196"
+    },
+    {
+      "src": "https://anoxxxy.github.io/bitbay-webwallet/assets/images/favicon/favicon-160.png",
+      "type": "image/png",
+      "sizes": "160x160"
+    },
+    {
+      "src": "https://anoxxxy.github.io/bitbay-webwallet/assets/images/favicon/favicon-96.png",
+      "type": "image/png",
+      "sizes": "96x96"
+    },
+    {
+      "src": "https://anoxxxy.github.io/bitbay-webwallet/assets/images/favicon/favicon-64.png",
+      "type": "image/png",
+      "sizes": "64x64"
+    },
+    {
+      "src": "https://anoxxxy.github.io/bitbay-webwallet/assets/images/favicon/favicon-32.png",
+      "type": "image/png",
+      "sizes": "32x32"
+    },
+    {
+      "src": "https://anoxxxy.github.io/bitbay-webwallet/assets/images/favicon/favicon-16.png",
+      "type": "image/png",
+      "sizes": "16x16"
+    },
+    {
+      "src": "https://anoxxxy.github.io/bitbay-webwallet/assets/images/favicon/favicon-57.png",
+      "type": "image/png",
+      "sizes": "57x57"
+    },
+    {
+      "src": "https://anoxxxy.github.io/bitbay-webwallet/assets/images/favicon/favicon-114.png",
+      "type": "image/png",
+      "sizes": "114x114"
+    },
+    {
+      "src": "https://anoxxxy.github.io/bitbay-webwallet/assets/images/favicon/favicon-72.png",
+      "type": "image/png",
+      "sizes": "72x72"
+    },
+    {
+      "src": "https://anoxxxy.github.io/bitbay-webwallet/assets/images/favicon/favicon-144.png",
+      "type": "image/png",
+      "sizes": "144x144"
+    },
+    {
+      "src": "https://anoxxxy.github.io/bitbay-webwallet/assets/images/favicon/favicon-60.png",
+      "type": "image/png",
+      "sizes": "60x60"
+    },
+    {
+      "src": "https://anoxxxy.github.io/bitbay-webwallet/assets/images/favicon/favicon-120.png",
+      "type": "image/png",
+      "sizes": "120x120"
+    },
+    {
+      "src": "https://anoxxxy.github.io/bitbay-webwallet/assets/images/favicon/favicon-76.png",
+      "type": "image/png",
+      "sizes": "76x76"
+    },
+    {
+      "src": "https://anoxxxy.github.io/bitbay-webwallet/assets/images/favicon/favicon-152.png",
+      "type": "image/png",
+      "sizes": "152x152"
+    },
+    {
+      "src": "https://anoxxxy.github.io/bitbay-webwallet/assets/images/favicon/favicon-180.png",
+      "type": "image/png",
+      "sizes": "180x180"
+    },
+    {
+      "src": "https://anoxxxy.github.io/assets/images/favicon/favicon-114.png"
+    }
+  ],
+  "shortcuts": []
+}
