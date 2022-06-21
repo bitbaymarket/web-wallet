@@ -1,3 +1,7 @@
+//***Global variables!
+	var profile_data = {};
+	//profile_data.encryptedText = "hejsan sade katten";
+
 /*
  Coinjs 0.01 beta by OutCast3k{at}gmail.com
  A bitcoin framework.
@@ -18,14 +22,8 @@
 	coinjs.priv = 0x99;
 	coinjs.multisig = 0x55;
 	coinjs.multisig_str = "55";
-	coinjs.hdkey = {'prv':0x02cfbede, 'pub':0x02cfbf60};
-	
-	/*
-	coinjs.pub = 0x00;
-	coinjs.priv = 0x80;
-	coinjs.multisig = 0x05;
-	coinjs.hdkey = {'prv':0x0488ade4, 'pub':0x0488b21e};
-*/
+	coinjs.hdkey = {'prv':0x02cfbf60, 'pub':0x02cfbede};
+
 	coinjs.compressed = false;
 
 	//For Bitbay, Blackcoin
@@ -33,7 +31,8 @@
 	coinjs.decimalPlaces = 8;
 	coinjs.symbol = 'BAY';
 	coinjs.symbolReserve = 'BAYR';
-	coinjs.debug = true;
+	coinjs.amountCoinSymbolActive = coinjs.symbol;
+	coinjs.debug = false;
 	coinjs.block_processor = 'bp';
 	coinjs.burn_fee = 0.00005590;	//satoshi's
 	coinjs.mTransactionoNList = {};	//used for keeping manualTransactions data
@@ -222,7 +221,13 @@ https://api.latoken.com/v2/ticker
 		var checksum = r.slice(0,4);
 		var redeemScript = Crypto.util.bytesToHex(s.buffer);
 		var address = coinjs.base58encode(x.concat(checksum));
-		return {'address':address, 'redeemScript':redeemScript};
+
+		if(s.buffer.length > 520){ // too large
+			address = 'invalid';
+			redeemScript = 'invalid';
+		}
+
+		return {'address':address, 'redeemScript':redeemScript, 'size': s.buffer.length};
 	}
 
 	/* new time locked address, provide the pubkey and time necessary to unlock the funds.
@@ -361,12 +366,11 @@ https://api.latoken.com/v2/ticker
 	}
 
 	/* provide a privkey and return an WIF  */
-	coinjs.privkey2wif = function(h, compress = true){
+	coinjs.privkey2wif = function(h){
 		var r = Crypto.util.hexToBytes(h);
 
-		if (compress) {
+		if (coinjs.compressed) {
 			r.push(0x01);
-			console.log('compress: ');
 		}
 			/*
 		}
@@ -377,14 +381,9 @@ https://api.latoken.com/v2/ticker
 		*/
 
 		r.unshift(coinjs.priv);
-		console.log('r: ', r);
 		
 		var hash = Crypto.SHA256(Crypto.SHA256(r, {asBytes: true}), {asBytes: true});
 		var checksum = hash.slice(0, 4);
-
-		console.log('hash: ', hash);
-		console.log('checksum Crypto.util.bytesToHex: ', Crypto.util.bytesToHex(checksum));
-		
 
 		return coinjs.base58encode(r.concat(checksum));
 	}
@@ -1291,11 +1290,12 @@ https://api.latoken.com/v2/ticker
 							var scriptPubKey_buffer = Crypto.util.bytesToHex(scriptPubKey.buffer);
 							inputScript = scriptPubKey_buffer;
 						} else if (decode.version == coinjs.multisig){ // mulisig address
-							inputScript = $("#walletKeys .redeemScript_wallet").val();
+							inputScript = profile_data.redeem_script;
+							console.log('addUnspent inputScript: ', inputScript);
 						}
 						
 						if (coinjs.debug) {
-							console.log ("redeemScript_wallet: "+ $("#walletKeys .redeemScript_wallet").val() ); 
+							console.log ("redeemScript_wallet: "+ profile_data.redeem_script ); 
 						}
 						for(var i in dataJSON.result){
 							var o = dataJSON.result[i];
@@ -2290,5 +2290,7 @@ https://api.latoken.com/v2/ticker
 
 		return generatePassword(l);
 	}
+
+	//console.log('global client variable: ' , profile_data);
 
 })();

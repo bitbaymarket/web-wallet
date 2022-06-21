@@ -1,5 +1,4 @@
-var profile_data = "";
-var debug = false;
+var debug = true;
 var bip39 = new BIP39('en');
 /*
 
@@ -159,40 +158,454 @@ document.getElementById('multisigWalletNnumber').addEventListener('change', func
   
 });
 */
+/*
+@ Switch Address when client have logged in with 2 private keys
+*/
+document.querySelector('.switchAddress').addEventListener('click', function (e) {
+	console.log('Triggering switch multisig address');
+	switchPubKeys(profile_data);
+	return;
+});
+
+/*
+@ Login Handling for Importing Wallet
+*/
+document.querySelector('#loginExtraImportFile').addEventListener('click', function (e) {
 
 
-document.getElementById('openBtn').addEventListener('click', function () {
-  console.log("You finally clicked without jQuery");
-  
-  
+	//get inputs elements for importing wallet backup files
+	//console.log('e', e);
+	var privateKeyFileArea = e.target.previousElementSibling;
+	//check if second file drop-area is visible
+	if(privateKeyFileArea.classList.contains('hidden')){
+		event.target.innerHTML = '- Remove second import file';
+		privateKeyFileArea.classList.remove('hidden');
+	}else{
+		event.target.innerHTML = '+ Add second import file';
+		privateKeyFileArea.classList.add('hidden');
+		privateKeyFileArea.classList.remove('is-active');
+		privateKeyFileArea.classList.remove('is-active-imported');
+		privateKeyFileArea.classList.remove('has-error');
+
+		//remove second import file backup from client data
+		if(Object.keys(profile_data).indexOf('imported_wallet') !== -1)
+			if (Object.keys(profile_data.imported_wallet).indexOf('1') !== -1)
+				profile_data.imported_wallet[1] = [];
+
+    //reset file-drop-area (file-input and message)!
+    //privateKeyFileArea.children[1].innerText = "or drag and drop the file here";
+    //privateKeyFileArea.children[2].value = null;
+
+    document.querySelector('.file-drop-area.importfile2 .file-msg').innerText = "or drag and drop the file here";
+    document.querySelector('.file-drop-area.importfile2 .file-input').value = null;
+
+    $('section.login-box[data-wallet-login-multistep-wizard=import_wallet] .walletLoginStatus').html('Second import file option was removed!').removeClass("hidden").removeClass("hide").addClass('alert-warning').removeClass('alert-success').fadeOut().fadeIn();
+
+	}
+});
+
+document.querySelector('#openBtnImportWallet').addEventListener('click', function (e) {
+
+
+	//error handling  
+  var error = true;
+  var errorMessage = '';
+
+  try {
+	  profile_data.pubkey_sorted = false;
+	  profile_data.private_keys = [];
+	  profile_data.public_keys = [];
+
+		
+		//is first imported file decrypted?
+		//if(privkey1data.address === undefined && privkey1data.privkey_hex === undefined && privkey1data.privkey_wif === undefined && privkey1data.pubkey === undefined){
+		if(profile_data.imported_wallet[0].decrypted.privkey_wif === undefined) {
+			errorMessage += "Your Private Key 1 is not valid! <br>";
+			return;
+		}
+		var decodedPrivkey1 = profile_data.imported_wallet[0].decrypted, privkey1;
+
+		privkey1 = decodedPrivkey1.privkey_wif;	
+
+		//***Validate private keys!
+		//handle private key 1
+		profile_data.address = decodedPrivkey1.address;
+		profile_data.private_keys.push(decodedPrivkey1.privkey_wif);
+		profile_data.public_keys.push(decodedPrivkey1.pubkey);
+
+		profile_data.signatures = 1;
+	  profile_data.wallet_type = "regular";
+
+
+
+		//is second imported file decrypted?
+		//if(privkey1data.address === undefined && privkey1data.privkey_hex === undefined && privkey1data.privkey_wif === undefined && privkey1data.pubkey === undefined){
+		
+		if (!document.querySelector('.file-drop-area.importfile2').classList.contains('hidden')) {
+
+			if(profile_data.imported_wallet[1].decrypted.privkey_wif === undefined) {
+				errorMessage += "Your Private Key 2 is not valid! <br>";
+				return;
+			}
+			var decodedPrivkey2 = profile_data.imported_wallet[1].decrypted, privkey2;
+
+			privkey2 = decodedPrivkey2.privkey_wif;	
+
+			//There was an error combining the keys. Please make sure that you cn locate both private key files before proceeding with your account.
+
+			//***Validate private keys!
+			if(privkey1 != privkey2){
+
+				//console.log('decodedPrivkey2: ', decodedPrivkey2);
+				profile_data.private_keys.push(decodedPrivkey2.privkey_wif);
+				profile_data.public_keys.push(decodedPrivkey2.pubkey);
+
+				profile_data.pubkey_sorted = isArraySorted(profile_data.public_keys);
+				
+				profile_data.signatures = 2;
+				profile_data.wallet_type = "multisig";
+
+				//BitBay/Halo Client wallet only accepts addresses with sorted public keys, sort it!
+				if (profile_data.pubkey_sorted == false){
+					profile_data.private_keys.reverse();
+					profile_data.public_keys.reverse();
+					profile_data.pubkey_sorted = true;
+				}
+
+				//create multisig address
+				
+				var multisig =  coinjs.pubkeys2MultisigAddress(profile_data.public_keys, 2);	//create 2-of-2 multisig wallet
+				profile_data.address = multisig["address"];	//address, scriptHash, redeemScript
+				profile_data.redeem_script = multisig["redeemScript"];	//address, scriptHash, redeemScript
+
+				console.log('multisig: ', multisig);
+				//console.log('profile_data before sort: ', profile_data);
+				//if (!profile_data.pubkey_sorted)
+					//sortPubKeys(profile_data);
+			}else
+				errorMessage += "Imported files are the same! <br>";
+		}
+
+		//***Get input fields
+	  profile_data.remember_me = ($(this).parents('section').find('input.loginRemember').is(":checked") ? 1 : 0)
+	  loginRemember = profile_data.remember_me;
+
+
+		//***No Errors! Proceed Login - with private key generation!
+		if(!errorMessage){
+			$(".walletLoginStatus").html('').addClass("hidden").fadeIn().fadeOut();
+			profile_data.login_type = "import_wallet";
+			checkUserLogin(profile_data);
+			return ;
+		}
+	} catch(e) {
+  	errorMessage = "Something went wrong, did you really import the backup files?";
+  }
+	
+	//***Error message handling!
+	//$(e.offsetParent).prepend('<i class="bi bi-exclamation-triangle-fill"></i> ');
+	//$(e.offsetParent).html(errorMessage).removeClass("hidden").removeClass("hide").fadeOut().fadeIn();
+
+	$('section.login-box[data-wallet-login-multistep-wizard=import_wallet] .walletLoginStatus').html(errorMessage).prepend('<i class="bi bi-exclamation-triangle-fill"></i> ').removeClass("hidden").removeClass("hide").removeClass('alert-success').addClass('alert-danger').fadeOut().fadeIn();
+	return ;
+});
+
+function switchPubKeys(sessionData){
+	sessionData.private_keys.reverse();
+	sessionData.public_keys.reverse();
+	
+	var multisig =  coinjs.pubkeys2MultisigAddress(sessionData.public_keys, 2);	//create 2-of-2 multisig wallet
+	sessionData.address = multisig["address"];	//address, scriptHash, redeemScript
+	sessionData.redeem_script = multisig["redeemScript"];
+
+	console.log('your new address: ' + multisig["address"]);
+	console.log('pubkeys is now sorted: ', sessionData);
+
+	return checkUserLogin(sessionData);
+
+}
+/*
+ @ Sort public keys for new combined pubkey address
+ //this is needed to import a multisig address to BitBay/Halo Client Wallet
+*/
+function sortPubKeys(sessionData, sort='asc'){
+	
+	if (sessionData.pubkey_sorted == false && sort == 'asc') {	//sort
+		profile_data.private_keys.reverse();
+		profile_data.public_keys.reverse();
+	}
+	if (sessionData.pubkey_sorted == true && sort == 'desc') {
+		profile_data.private_keys.reverse();
+		profile_data.public_keys.reverse();
+	}
+
+/*
+	//switch orders of private and publickey
+	profile_data.private_keys[0] = sessionData.private_keys[1];
+	profile_data.private_keys[1] = sessionData.private_keys[0];
+
+	profile_data.public_keys[0] = sessionData.public_keys[1];
+	profile_data.public_keys[1] = sessionData.public_keys[0];
+*/
+	//now generate the new address with its redeemscript
+	var multisig =  coinjs.pubkeys2MultisigAddress(profile_data.public_keys, 2);	//create 2-of-2 multisig wallet
+	profile_data.address = multisig["address"];	//address, scriptHash, redeemScript
+	profile_data.redeem_script = multisig["redeemScript"];
+
+	console.log('your new address: ' + multisig["address"]);
+	console.log('pubkeys is now sorted: ', profile_data);
+	return;
+}
+
+/*
+@ Login Handling for Private Keys
+*/
+
+document.querySelector('#loginExtraPrivateKey').addEventListener('click', function (event) {
+	
+	//get inputs elements for private keys
+	var privateKeyInputs = [];
+	$('section.login-box[data-wallet-login-multistep-wizard=private_key] input[name=openPrivateKey]').each(function(i, e) {
+	  privateKeyInputs.push(e);
+	});
+	//console.log('privateKeyInputs: ', privateKeyInputs);
+	//console.log('privateKeyInputs.length: ', privateKeyInputs.length);
+
+	//check if second key is visible
+	//console.log('second: ', privateKeyInputs[1].parentElement.classList.contains('hidden'));
+	if(privateKeyInputs[1].parentElement.classList.contains('hidden')){
+		event.target.innerHTML = '- Remove second private key';
+		privateKeyInputs[1].parentElement.classList.remove('hidden');
+	}else{
+		event.target.innerHTML = '+ Add second private key';
+		privateKeyInputs[1].parentElement.classList.add('hidden');
+		privateKeyInputs[1].value = '';
+	}
+});
+document.querySelector('#openBtnPrivateKey').addEventListener('click', function () {
+	
+	//error handling  
+  var error = true;
+  var errorMessage = '';
+
+  profile_data.pubkey_sorted = false;
+  profile_data.private_keys = [];
+  profile_data.public_keys = [];
+
+  //***Get input fields
+  profile_data.remember_me = ($(this).parents('section').find('input.loginRemember').is(":checked") ? 1 : 0)
+  loginRemember = profile_data.remember_me;
+  //console.log('loginRemember: ' + loginRemember);
+
+  //get inputs elements for privatekeys
+	var privateKeyInputs = [];
+	$('section.login-box[data-wallet-login-multistep-wizard=private_key] input[name=openPrivateKey]').each(function(i, e) {
+	  privateKeyInputs.push(e);
+	});
+
+	var privkey1 = privateKeyInputs[0].value;
+	var privkey2 =  privateKeyInputs[1].value;
+
+	//***Validate private keys!
+	//handle private key 1
+	var decodedPrivkey1 = getDecodedPrivKey(privkey1);
+	if(!decodedPrivkey1){
+		errorMessage += "Your Private Key 1 is not valid! <br>";
+		privateKeyInputs[0].parentElement.classList.add('has-error');
+	}else{
+		privateKeyInputs[0].parentElement.classList.remove('has-error');
+		//console.log('decodedPrivkey1: ', decodedPrivkey1);
+
+		profile_data.address = decodedPrivkey1.address;
+		profile_data.private_keys.push(decodedPrivkey1.privkey_wif);
+		profile_data.public_keys.push(decodedPrivkey1.pubkey);
+	}
+	profile_data.signatures = 1;
+  profile_data.wallet_type = "regular";
+
+
+	//We have 2 Private Keys inputs!
+	if(!privateKeyInputs[1].parentElement.classList.contains('hidden')){
+
+		var decodedPrivkey2 = getDecodedPrivKey(privkey2);
+  	if(!decodedPrivkey2){
+  		errorMessage += "Your Private Key 2 is not valid! <br>";
+  		privateKeyInputs[1].parentElement.classList.add('has-error');
+  	}else{
+  		privateKeyInputs[1].parentElement.classList.remove('has-error');
+
+  		//console.log('decodedPrivkey2: ', decodedPrivkey2);
+  		profile_data.private_keys.push(decodedPrivkey2.privkey_wif);
+  		profile_data.public_keys.push(decodedPrivkey2.pubkey);
+  		profile_data.signatures = 2;
+  		profile_data.wallet_type = "multisig";
+
+  		//create multisig address
+  		var keys_combined = [decodedPrivkey1.pubkey, decodedPrivkey2.pubkey];
+			var multisig =  coinjs.pubkeys2MultisigAddress(keys_combined, 2);	//create 2-of-2 multisig wallet
+			profile_data.address = multisig["address"];	//address, scriptHash, redeemScript
+			profile_data.redeem_script = multisig["redeemScript"];	//address, scriptHash, redeemScript
+
+  	}
+	}
+
+
+	//***No Errors! Proceed Login - with private key generation!
+	if(!errorMessage){
+		$(".walletLoginStatus").html('').addClass("hidden").fadeIn().fadeOut();
+		profile_data.login_type = "private_keys";
+		checkUserLogin(profile_data);
+		return ;
+	}
+
+	//***Error message handling!
+	$('section.login-box[data-wallet-login-multistep-wizard=private_key] .walletLoginStatus').html(errorMessage).prepend('<i class="bi bi-exclamation-triangle-fill"></i> ').removeClass("hidden").removeClass("hide").fadeOut().fadeIn();
+	return ;
+
+
+});
+
+/*
+ @ Login Button for email+password
+*/
+document.querySelector('.loginButton').addEventListener('click', function () {
+	//error handling  
+  var error = true;
+  var errorMessage = '';
+
+  //set client default values for profile data
+  profile_data.signatures = 1;
+  profile_data.wallet_type = "regular";
+
+  //***Get input fields
+  var confirmFieldsIsChecked = $("#confirmPass").is(":checked");
+  //var loginRemember = $(this).parents('section').find('input.loginRemember').is(":checked");
+  profile_data.remember_me = ($(this).parents('section').find('input.loginRemember').is(":checked") ? 1 : 0)
+  loginRemember = profile_data.remember_me;
+
+  console.log('confirmFieldsIsChecked: ' + confirmFieldsIsChecked);
+  console.log('loginRemember: ' + loginRemember);
+
+  var walletType = $("#regularwallet").hasClass("active") ? "regular" : "multisig";
+  console.log('walletType: ' + walletType);
+
   //get passwords
   var loginPass = [];
   var loginPassEl = document.getElementsByName("openPass");
   for(var i = 0; i < loginPassEl.length; i++) {
-    loginPass.push({"password": (loginPassEl[i].value).trim()});
-    
+    loginPass.push((loginPassEl[i].value).trim());
   }
-  
   console.log('loginPass: ', loginPass);
-  
-  console.log('loginPass: ' + loginPass[0]["password"]);
-  console.log('loginPass: ' + loginPass[1]["password"]);
-  
+  console.log('loginPass: ', loginPass[0]);
   
   //get confirmed passwords 
   var loginPassConfirm = [];
   var loginPassConfirmEl = document.getElementsByName("openPass-confirm");
   for(var i = 0; i < loginPassConfirmEl.length; i++) {
-    loginPassConfirm.push({"password": (loginPassConfirmEl[i].value).trim()});
-    
+    loginPassConfirm.push((loginPassConfirmEl[i].value).trim());
   }
-  
   console.log('loginPassConfirm: ', loginPassConfirm);
+  console.log('loginPassConfirm: ', loginPassConfirm[0]);
   
-  console.log('loginPassConfirm: ' + loginPassConfirm[0]["password"]);
-  console.log('loginPassConfirm: ' + loginPassConfirm[1]["password"]);
+  //get emails
+  var loginEmail = $("#openEmail").val().toLowerCase().trim();
+  var loginEmailConfirm = $("#openEmail-confirm").val().toLowerCase().trim();
+
+  //***Validate the input fields
+  if(!validateEmail(loginEmail)) errorMessage += 'Email is not valid!<br/>';
   
-  
+
+  console.log('loginEmail: ', loginEmail);
+  //console.log('loginEmailConfirm: ', loginEmailConfirm);
+
+	if(!validatePassword(loginPass[0]))	errorMessage += 'Your Password must at least have 12 chars and must include minimum 1 number, 1 uppercase letter, 1 lowercase letter and 1 special character from \"!#$€%&\'()*+,-./:;<=>?@[\]^_`{|}~¤¨½§ <br>';
+	
+	//check if Confirmation (email and password) is needed for regular login
+	if(confirmFieldsIsChecked){
+		if(!validateEmail(loginEmailConfirm)) errorMessage += 'Confirmed Email is not valid!<br/>';
+  	if(loginEmail != loginEmailConfirm) errorMessage += 'Email and Confirmed Email is not the same!<br/>';
+		if(!validatePassword(loginPassConfirm[0])) errorMessage += 'Confirmed Password is not valid!<br/>';
+
+		//compare password and confirmed password
+  	if(loginPass[0] != loginPassConfirm[0]) errorMessage += '"Password" and "Confirmed Password" is not the same!<br/>';
+	}
+
+	//validate multisig wallet
+	if(walletType == 'multisig') {
+		if(!validatePassword(loginPass[1]))	errorMessage += 'Your Password2 must at least have 12 chars and must include minimum 1 number, 1 uppercase letter, 1 lowercase letter and 1 special character from \"!#$€%&\'()*+,-./:;<=>?@[\]^_`{|}~¤¨½§ <br>';
+		
+		//Password1 & Password2 should not be the same!
+  	if(loginPass[0] == loginPass[1]) errorMessage += 'You must use 2 different passwords!<br/>';
+
+		//check if Confirmation (email and password) is needed for multisig login
+		if(confirmFieldsIsChecked){
+			if(!validatePassword(loginPassConfirm[1])) errorMessage += 'Confirmed Password2 is not valid!<br/>';
+			if(loginPass[1] != loginPassConfirm[1]) errorMessage += '"Password2" and "Confirmed Password2" is not the same!<br/>';
+		}
+
+		profile_data.signatures = 2;	//this is a multisig account!
+		profile_data.wallet_type = "multisig";	//this is a multisig account!	we might remove this field later on since we can detect the signatures from variable above!
+
+	}
+
+	profile_data.login_type = "password";
+	profile_data.pubkey_sorted = false;
+	profile_data.public_keys = [];
+	
+
+	console.log('errorMessage: ' + errorMessage);
+	
+	//***No Errors! Proceed Login - with private key generation!
+	if(!errorMessage){
+		$(".walletLoginStatus").html('').addClass("hidden").fadeIn().fadeOut();
+
+		profile_data.email = loginEmail;
+		profile_data.passwords = loginPass;
+
+		/*profile_data = { 
+			"address" : "",
+			"email" : loginEmail,
+			"login_type" : "", //"password" (email & password login), "private_key" login, "import_wallet", mnemonic" login, "hdmaster" login
+			"wallet_type" : walletType,	//regular (login normal address), multisig
+			"redeem_script" : "",
+			"remember_me" : loginRemember,
+			"pubkey_sorted": false,	// check this when generating the private keys! - (it must be sorted if user wants to import to BitBay Client Wallet)
+			"signatures" : signatures,	//total signatures/private keys needs for signing a transaction!
+			
+			"public_keys" : [
+				//{loginPass[0]["password"]},
+				//{loginPass[1]["password"]}
+			],
+			"passwords" : [
+				loginPass
+				//{loginPass[0]["password"]},
+				//{loginPass[1]["password"]}
+			],
+			"private_keys" : [
+				{""},
+				{""}
+			],
+			"deterministic" : [
+				{"xpub" : ""},
+				{"xprv" : ""},
+				{"seed" : ""}
+			],
+			"imported_wallet" : [
+			{"file1": ""},
+			{"file2": ""},
+			]
+		};
+		*/
+
+		console.log('profile_data: ', profile_data);
+		checkUserLogin(profile_data);
+		return ;
+	}
+
+	//***Error message handling!
+	$(".walletLoginStatus").html(errorMessage).prepend('<i class="bi bi-exclamation-triangle-fill"></i> ').removeClass("hidden").removeClass("hide").fadeOut().fadeIn();
+	return ;
+
 });
 
 
@@ -204,7 +617,8 @@ document.getElementById('openBtn').addEventListener('click', function () {
 
 
 
-	$("#openBtn").click(function(){
+	$(".o2penBtn").click(function(){
+		console.log('$("#openBtc clicked');
 		var pass = $("#openPass").val();
 		var pass2 = $("#openPass2").val();
 		var remember_me = $("#rememberMe").val();
@@ -233,64 +647,49 @@ document.getElementById('openBtn').addEventListener('click', function () {
 
 
 /*
+old: 
+profile_data:"{"email":"email@test.com","wallet_type":"multisig","remember_me":"true","signatures":2,"passwords":[{"password":"pass1"},{"password":"pass2"}]}"
+
+
 profile_data = { 
-		"address" : "",
-		"email" : email,
-		"login_type" : "", //"password" (email, password login), "key" login, "mnemonic" login
-		"wallet_type" : walletType,	//regular (login normal address), multisig (login multisig address), key (login with private key), mnemonic (Mnemonic words login)
-		"remember_me" : remember_me,
-		"signatures" : 1,
-		"passwords" : [
-				{
-					"password" : pass,
-				},
-				{
-					"password" : pass2
-				}
-			],
-		"keys" : [
-				{"key" : ""}, 
-				{"key" : ""}
-			]
-		};
+	"address" : "",
+	"email" : email,
+	"login_type" : "", //"password" (email & password login), "private_key" login, "mnemonic" login, "hdmaster" login
+	"wallet_type" : walletType,	//regular (login normal address), multisig
+	"remember_me" : remember_me,
+	"pubkey_sorted": false,	//it must be sorted if user wants to import to BitBay Client Wallet
+	"signatures" : 1,	//total signatures/private keys needs for signing a transaction!
+	"passwords" : [
+			{"password" : pass},
+			{"password" : pass2}
+		],
+	"private_keys" : [
+			{"key" : ""},
+			{"key" : ""}
+		],
+	"pub_keys" : [
+			{"key" : ""},
+			{"key" : ""}
+		],
+	"deterministic" : [
+			{"xpub" : ""},
+			{"xprv" : ""},
+			{"seed" : ""}
+		]
+	};
 
-
-
-
-		profile_data = { 
-		"email" : email,
-		"wallet_type" : walletType,	//regular (login normal address), multisig (login multisig address), key (login with private key), mnemonic (Mnemonic words login)
-		"remember_me" : remember_me,
-		"signatures" : 1,
-		"passwords" : [
-				{
-					"password" : pass,
-				},
-				{
-					"password" : pass2
-				}
-			],
-		"keys" : [
-				{"key" : ""}, 
-				{"key" : ""}
-			]
-		};
 		*/
 		//checkUserLogin(JSON.parse(profile_data));
 		checkUserLogin(profile_data);
 	});
 
-	//copy walletKeys so sensitive info stay in the backup tab
-	function copyWalletInfo(){
-		if (debug) {
-			console.log("copyWalletInfo");
-		}
-		$("#walletKeysCopy").empty();
-		$("#walletKeys .share-yes").clone().appendTo("#walletKeysCopy");
-	}
 
-	//$(".walletLogout").click(function(sessionDestroy = false){
 	$(".walletLogout").click(function(e){
+		
+		//reset login options
+		$(".nav #wallet_options").click();
+		
+		//reset input fields and related messages
 		$("#openEmail").val("");
 		$("#openEmail-confirm").val("");
 		$("#openPass").val("");
@@ -298,21 +697,29 @@ profile_data = {
 		$("#openPass2").val("");
 		$("#openPass2-confirm").val("");
 		
+
+		$("input[name=openPass").val("");
+		$("input[name=openPass-confirm").val("");
+		$("input[name=openPrivateKey").val("");
+		$("input[type=file").val("");
+		$("section .file-drop-area").removeClass("is-active").removeClass("is-active-imported");
+		$("section .file-drop-area .file-msg").text("or drag and drop the file here");
+
+
+
 		//Menu Account Info
-		$(".walletEmail").text("");
-    $(".walletEmail").attr("data-original-title", "");
+		$(".walletAddress").text("");
+    $(".walletAddress").attr("data-original-title", "");
 		$(".walletBalance").text("");
 		$(".topPanel .walletBalance").text("You are not logged in");
 		$(".walletBalanceLiquid").text("");
 		$(".walletBalanceReserve").text("");
 		$(".walletBalanceFrozen").text("");
-		$(".accountSessionLogout").addClass("hidden");
-		$(".accountSessionLogin").removeClass("hidden");
     
-    $(".topPanel .glyphicon.glyphicon-log-out").addClass("hide");
+    $(".topPanel .bibi-box-arrow-left").addClass("hide");
     
 		
-		$("#openLogin").show();
+		$(".walletLogin").show();
 		$("#openWallet").addClass("hidden").show();
 
 		$("#walletAddress").html("");
@@ -323,16 +730,30 @@ profile_data = {
 		qrcode.makeCode("bitbay:");
 
 		$("#walletKeys .privkey").val("");
-		$("#walletKeys .pubkey").val("");
+		$(".walletPubKeys .pubkey").val("");
 		$("#walletKeys .privkeyaes").val("");
 		
 		$("#walletKeys .privkey2").val("");
-		$("#walletKeys .pubkey2").val("");
+		$(".walletPubKeys .pubkey2").val("");
 		$("#walletKeys .privkeyaes2").val("");
 		
-		//Remove HTML5 Sessions
-		//if (sessionDestroy)
-			HTML5.sessionStorage('profile_data').remove();
+
+		$('#disclaimer .btn-flatbay').prop('disabled', false);
+
+		$('.publicKeySortNotification').addClass('hidden');
+		$(".switch_pubkeys").addClass('hidden');
+		
+		/*
+		$('.walletPubKeys .redeemScript_wallet').parent().addClass('hidden');
+		$('.wallet_multisig_keys').addClass('hidden');
+		$('#walletKeys .privkey2').addClass('hidden');
+		$('.walletPubKeys .pubkey2').parent().addClass('hidden');
+		$("#walletKeys .privkeyaes2").addClass('hidden');
+		*/
+
+		//Remove HTML5 Sessions and emppty client data
+		HTML5.sessionStorage('profile_data').remove();
+		profile_data = {};
 		
 		//Remove NotifiesSessions
 		PNotify_remove();
@@ -358,6 +779,22 @@ profile_data = {
 	$("#walletBalanceFrozen").click(function(){
 		walletBalance();
 	});
+
+
+	$("#walletSpendType").click(function(){
+		var send_liquid = $("#walletSpendTypeLiquid").prop("checked");
+		var send_reserve = $("#walletSpendTypeReserve").prop("checked");
+
+
+		if(send_liquid)
+			coinjs.amountCoinSymbolActive = coinjs.symbol;
+		else
+			coinjs.amountCoinSymbolActive = coinjs.symbolReserve;
+
+		$("#walletSpendTab .input-group-addon.amountCoinSymbol").text(coinjs.amountCoinSymbolActive);
+	});
+
+		
 
 	$("#walletConfirmSend").click(async function(){
 		var thisbtn = $(this);
@@ -515,7 +952,7 @@ profile_data = {
 								$("#walletSendConfirmStatus").removeClass("hidden").removeClass('alert-danger').addClass('alert-success').html(mess);
 	
 								if (devamountVal > 0)
-									$("#walletSendConfirmStatus").html( $("#walletSendConfirmStatus").html() + '<br /> <span class="glyphicon glyphicon-heart"></span> Thank you very much for your donation');
+									$("#walletSendConfirmStatus").html( $("#walletSendConfirmStatus").html() + '<br /> <i class="bi bi-suit-heart-fill"></i> Thank you very much for your donation');
 								$("#walletConfirmSend").html("Send");
 								$("#walletConfirmSend").addClass("hidden");
 							} else {	//$("#walletSendConfirmStatus").removeClass("hidden").addClass('alert-danger').html(unescape(callback_result).replace(/\+/g,' '));
@@ -643,6 +1080,7 @@ profile_data = {
 					// then sign, regular wallet
 					var signed = await txunspent.sign($("#walletKeys .privkey").val());
 					
+					console.log('signed with privkey1: '+ $("#walletKeys .privkey").val());
 				
 	
 					// then sign again, if multisig wallet
@@ -657,6 +1095,7 @@ profile_data = {
 					if ($("#walletKeys .privkey2").val() != "") {
 						txunspent = tx2.deserialize(signed); 
 						signed = await txunspent.sign($("#walletKeys .privkey2").val());
+						console.log('signed with privkey1: '+ $("#walletKeys .privkey2").val());
 					}
 					
 					
@@ -711,11 +1150,10 @@ profile_data = {
 								$("#walletSendConfirmStatus").removeClass("hidden").removeClass('alert-danger').addClass('alert-success').html(mess);
 	
 								if (devamountVal > 0)
-									$("#walletSendConfirmStatus").html( $("#walletSendConfirmStatus").html() + '<br /> <span class="glyphicon glyphicon-heart"></span> Thank you very much for your donation');
+									$("#walletSendConfirmStatus").html( $("#walletSendConfirmStatus").html() + '<br /> <i class="bi bi-suit-heart-fill"></i> Thank you very much for your donation');
 
 								$("#walletConfirmSend").html("Send");
 								$("#walletConfirmSend").addClass("hidden");
-								$("#modalWalletConfirm .modal-body p").css('display','none');
 							} else {
 								//$("#walletSendConfirmStatus").removeClass("hidden").addClass('alert-danger').html(unescape(callback_result).replace(/\+/g,' '));
 								$("#walletSendConfirmStatus").removeClass("hidden").removeClass('alert-success').addClass('alert-danger').html(unescape(callback_result)).append("<br>You should perhaps try to raise the Transaction Fee?");
@@ -846,15 +1284,14 @@ async function init_broadcast_progress_bar(txinputs_total, manualTransaction=1) 
 	$("#walletSendFailTransaction textarea").val("");
 								
 	$(".broadcast-process").removeClass("hidden");
-	var totalSignatures;
+	var totalSignatures = 1;
 
 	if(manualTransaction == 1){
 		totalSignatures = 1;
 		parentElement = 0; //'signedDataProgress';
 		console.log('totalSignatures: ', totalSignatures);
 	} else {
-		totalSignatures = (profile_data.passwords).length;
-		console.log('(profile_data.passwords).length: ', (profile_data.passwords).length);
+			totalSignatures = profile_data.signatures;
 		parentElement = 1;
 	}
 
@@ -922,8 +1359,8 @@ async function init_broadcast_progress_bar(txinputs_total, manualTransaction=1) 
 		var total = (devamount.val()*1) + (txfee.val()*1);
 
 		$.each($("#walletSpendTo .output"), function(i,o){
-			var amount = $('.amount',o);
-			var address = $('.addressTo',o);
+			var amount = $('.amount',o).trim();
+			var address = $('.addressTo',o).trim();
 
 			total += amount.val()*1;
 
@@ -956,7 +1393,7 @@ async function init_broadcast_progress_bar(txinputs_total, manualTransaction=1) 
 			}
 		} else {
 			$("#walletSpend .has-error").fadeOut().fadeIn();
-			$("#walletSendStatus").removeClass("hidden").html('<span class="glyphicon glyphicon-exclamation-sign"></span> One or more input has an error');
+			$("#walletSendStatus").removeClass("hidden").html('<i class="bi bi-exclamation-triangle-fill"></i> One or more input has an error');
 		}
 	});
 
@@ -970,8 +1407,8 @@ async function init_broadcast_progress_bar(txinputs_total, manualTransaction=1) 
     
 		var clone = '<div class="form-horizontal output">'+$(this).parent().html()+'</div>';
     $("#walletSpendTo").append(clone);
-		$("#walletSpendTo .glyphicon-plus:last").removeClass('glyphicon-plus').addClass('glyphicon-minus');
-		$("#walletSpendTo .glyphicon-minus:last").parent().removeClass('addressAdd').addClass('addressRemove');
+		$("#walletSpendTo .bi-plus:last").removeClass('bi-plus').addClass('bi-dash');
+		$("#walletSpendTo .bi-dash:last").parent().removeClass('addressAdd').addClass('addressRemove');
     
     //hide and unbind the old tooltips, bind the new one
 		$("#walletSpendTo .tooltip").hide();
@@ -1060,14 +1497,14 @@ async function init_broadcast_progress_bar(txinputs_total, manualTransaction=1) 
         
         if(data.result.pegnext > data.result.peg){
           $(".pegIndex h4").attr("data-original-title", "Peg-Index seems to increase lately...");
-          $(".pegIndex h4 span.glyphicon:nth-child(3)").removeClass("glyphicon-arrow-down").addClass("glyphicon-arrow-up");
+          $(".pegIndex h4 i.bi:nth-child(3)").removeClass("bi-arrow-down-short").addClass("bi-arrow-up-short");
         }else if(data.result.pegnext == data.result.peg){
         
         $(".pegIndex h4").attr("data-original-title", "Peg-Index is unchanged");
-          $(".pegIndex h4 span.glyphicon:nth-child(3)").removeClass("glyphicon-arrow-up").removeClass("glyphicon-arrow-down").addClass("glyphicon glyphicon-arrow-right");
+          $(".pegIndex h4 i.bi:nth-child(3)").removeClass("bi-arrow-up-short").removeClass("bi-arrow-down-short").addClass("bi bi-arrow-right-short");
         }else{
           $(".pegIndex h4").attr("data-original-title", "Peg-Index seems to decrease lately...");
-          $(".pegIndex h4 span.glyphicon:nth-child(3)").removeClass("glyphicon-arrow-up").addClass("glyphicon-arrow-down");
+          $(".pegIndex h4 i.bi:nth-child(3)").removeClass("bi-arrow-up-short").addClass("bi-arrow-down-short");
         }
       }
     });
@@ -1099,8 +1536,8 @@ async function init_broadcast_progress_bar(txinputs_total, manualTransaction=1) 
 					PNotify_helper('Balance', 'Your current Balance is: '+newBalance, 'error');
 				}
 				$(".walletBalance").html(newBalance+" "+coinjs.symbol).attr('rel',newBalance).fadeOut().fadeIn();
-				$(".topPanel .walletBalance").text("Balance ("+coinjs.symbol+"): " + newBalance).attr('rel',newBalance).fadeOut().fadeIn();
-				$(".topPanel .glyphicon.glyphicon-log-out").removeClass("hide");
+				$(".topPanel .walletBalance").text("Balance: " + newBalance).attr('rel',newBalance).fadeOut().fadeIn();
+				$(".topPanel .bi.bi-box-arrow-left").removeClass("hide");
 				$(".walletBalanceLiquid").html(newLiquid+" "+coinjs.symbol).attr('rel',newLiquid);
 				$(".walletBalanceReserve").html(newReserve+" "+coinjs.symbol+'R').attr('rel',newReserve);
 				$(".walletBalanceFrozen").html(newFrozen+" "+coinjs.symbol).attr('rel',newFrozen);
@@ -1441,7 +1878,7 @@ function drawPieChart(piechart, pegBalanceData) {
 		if($("#newCompressed").is(":checked")){
 			coinjs.compressed = true;
 		}
-		var s = ($("#newBrainwallet").is(":checked")) ? $("#brainwallet").val() : null;
+		var s = ($("#newBrainwalletCheck").is(":checked")) ? $("#brainwallet").val() : null;
 		var coin = coinjs.newKeys(s);
 		$("#newBitcoinAddress").val(coin.address);
 		$("#newPubKey").val(coin.pubkey);
@@ -1456,16 +1893,22 @@ function drawPieChart(piechart, pegBalanceData) {
 		} else {
 			$("#aes256passStatus").removeClass("hidden");
 		}
+		//var icee = CryptoJS.AES.encrypt(coin.wif, 22+'');
+		
+		//$("#newPrivKeyEnc").val(icee+' hejsan');
 
 		$("#newPrivKeyEnc").val(CryptoJS.AES.encrypt(coin.wif, $("#aes256pass").val())+'');
 
 	});
 
-	$("#newBrainwallet").click(function(){
+	$("#newBrainwalletCheck").click(function(){
 		if($(this).is(":checked")){
 			$("#brainwallet").removeClass("hidden");
+			$("#brainwallet").next().removeClass("hidden")
+
 		} else {
 			$("#brainwallet").addClass("hidden");
+			$("#brainwallet").next().addClass("hidden")
 		}
 	});
 
@@ -1511,7 +1954,7 @@ function drawPieChart(piechart, pegBalanceData) {
 
 		if((isNaN($("#releaseCoins option:selected").html())) || ((!isNaN($("#releaseCoins option:selected").html())) && ($("#releaseCoins option:selected").html()>$("#multisigPubKeys .pubkey").length || $("#releaseCoins option:selected").html()*1<=0 || $("#releaseCoins option:selected").html()*1>8))){
 			$("#releaseCoins").parent().addClass('has-error');
-			$("#multiSigErrorMsg").html('<span class="glyphicon glyphicon-exclamation-sign"></span> Minimum signatures required is greater than the amount of public keys provided').fadeIn();
+			$("#multiSigErrorMsg").html('<i class="bi bi-exclamation-triangle-fill"></i> Minimum signatures required is greater than the amount of public keys provided').fadeIn();
 			return false;
 		}
 
@@ -1528,13 +1971,17 @@ function drawPieChart(piechart, pegBalanceData) {
 		if(($("#multisigPubKeys .pubkey").parent().hasClass('has-error')==false) && $("#releaseCoins").parent().hasClass('has-error')==false){
 			var sigsNeeded = $("#releaseCoins option:selected").html();
 			var multisig =  coinjs.pubkeys2MultisigAddress(keys, sigsNeeded);
-			$("#multiSigData .address").val(multisig['address']);
-			$("#multiSigData .script").val(multisig['redeemScript']);
-			$("#multiSigData .scriptUrl").val(document.location.origin+''+document.location.pathname+'?verify='+multisig['redeemScript']+'#verify');
-			$("#multiSigData").removeClass("hidden").addClass('show').fadeIn();
-			$("#releaseCoins").removeClass('has-error');
+			if(multisig.size <= 520){
+				$("#multiSigData .address").val(multisig['address']);
+				$("#multiSigData .script").val(multisig['redeemScript']);
+				$("#multiSigData .scriptUrl").val(document.location.origin+''+document.location.pathname+'?verify='+multisig['redeemScript']+'#verify');
+				$("#multiSigData").removeClass('hidden').addClass('show').fadeIn();
+				$("#releaseCoins").removeClass('has-error');
+			} else {
+				$("#multiSigErrorMsg").html('<i class="bi bi-exclamation-triangle-fill"></i> Your generated redeemscript is too large (>520 bytes) it can not be used safely').fadeIn();
+			}
 		} else {
-			$("#multiSigErrorMsg").html('<span class="glyphicon glyphicon-exclamation-sign"></span> One or more public key is invalid!').fadeIn();
+			$("#multiSigErrorMsg").html('<i class="bi bi-exclamation-triangle-fill"></i> One or more public key is invalid!').fadeIn();
 		}
 	});
 
@@ -1542,8 +1989,8 @@ function drawPieChart(piechart, pegBalanceData) {
 		if($("#multisigPubKeys .pubkeyRemove").length<14){
 			var clone = '<div class="form-horizontal">'+$(this).parent().html()+'</div>';
 			$("#multisigPubKeys").append(clone);
-			$("#multisigPubKeys .glyphicon-plus:last").removeClass('glyphicon-plus').addClass('glyphicon-minus');
-			$("#multisigPubKeys .glyphicon-minus:last").parent().removeClass('pubkeyAdd').addClass('pubkeyRemove');
+			$("#multisigPubKeys .bi-plus:last").removeClass('bi-plus').addClass('bi-dash');
+			$("#multisigPubKeys .bi-dash:last").parent().removeClass('pubkeyAdd').addClass('pubkeyRemove');
 			$("#multisigPubKeys .pubkeyRemove").unbind("");
 			$("#multisigPubKeys .pubkeyRemove").click(function(){
 				$(this).parent().fadeOut().remove();
@@ -1662,10 +2109,10 @@ function drawPieChart(piechart, pegBalanceData) {
 	            $("#timeLockedData .scriptUrl").val(document.location.origin+''+document.location.pathname+'?verify='+hodl['redeemScript']+'#verify');
 	            $("#timeLockedData").removeClass("hidden").addClass('show').fadeIn();
 	        } catch(e) {
-	        	$("#timeLockedErrorMsg").html('<span class="glyphicon glyphicon-exclamation-sign"></span> ' + e).fadeIn();
+	        	$("#timeLockedErrorMsg").html('<i class="bi bi-exclamation-triangle-fill"></i> ' + e).fadeIn();
 	        }
         } else {
-            $("#timeLockedErrorMsg").html('<span class="glyphicon glyphicon-exclamation-sign"></span> Public key and/or date is invalid!').fadeIn();
+            $("#timeLockedErrorMsg").html('<i class="bi bi-exclamation-triangle-fill"></i> Public key and/or date is invalid!').fadeIn();
         }
     });
 
@@ -1679,7 +2126,7 @@ function drawPieChart(piechart, pegBalanceData) {
 
 	$("#newHDKeysBtn").click(function(){
 		coinjs.compressed = true;
-		var s = ($("#newHDBrainwallet").is(":checked")) ? $("#HDBrainwallet").val() : null;
+		var s = ($("#newHDBrainwalletCheck").is(":checked")) ? $("#HDBrainwallet").val() : null;
 		var hd = coinjs.hd();
 		var pair = hd.master(s);
 		$("#newHDxpub").val(pair.pubkey);
@@ -1687,12 +2134,16 @@ function drawPieChart(piechart, pegBalanceData) {
 
 	});
 
-	$("#newHDBrainwallet").click(function(){
+	$("#newHDBrainwalletCheck").click(function(){
 		if($(this).is(":checked")){
 			$("#HDBrainwallet").removeClass("hidden");
+			$("#HDBrainwallet").next().removeClass("hidden")
+
 		} else {
 			$("#HDBrainwallet").addClass("hidden");
+			$("#HDBrainwallet").next().addClass("hidden")
 		}
+
 	});
 
 	
@@ -1760,8 +2211,8 @@ function drawPieChart(piechart, pegBalanceData) {
 
 			var clone = '<div class="row recipient"><br>'+$(this).parent().parent().html()+'</div>';
 			$("#recipients").append(clone);
-			$("#recipients .glyphicon-plus:last").removeClass('glyphicon-plus').addClass('glyphicon-minus');
-			$("#recipients .glyphicon-minus:last").parent().removeClass('addressAdd').addClass('addressRemoveTo');
+			$("#recipients .bi-plus:last").removeClass('bi-plus').addClass('bi-dash');
+			$("#recipients .bi-dash:last").parent().removeClass('addressAdd').addClass('addressRemoveTo');
 			$("#recipients .addressRemoveTo").unbind("");
 			$("#recipients .addressRemoveTo").click(function(){
 				$(this).parent().parent().fadeOut().remove();
@@ -1899,8 +2350,8 @@ function drawPieChart(piechart, pegBalanceData) {
 
 					//$('#txoutputs #recipients').children().first().remove();
 
-					$("#recipients .glyphicon-plus:last").removeClass('glyphicon-plus').addClass('glyphicon-minus');
-					$("#recipients .glyphicon-minus:last").parent().removeClass('addressAdd').addClass('addressRemoveTo');
+					$("#recipients .bi-plus:last").removeClass('bi-plus').addClass('bi-dash');
+					$("#recipients .bi-dash:last").parent().removeClass('addressAdd').addClass('addressRemoveTo');
 					$("#recipients .addressRemoveTo").unbind("");
 					$("#recipients .addressRemoveTo").click(function(){
 						$(this).parent().parent().fadeOut().remove();
@@ -1990,8 +2441,8 @@ function drawPieChart(piechart, pegBalanceData) {
 					//$('#txoutputs #recipients').children().first().remove();
 					$('#recipients .row.recipient:nth-child('+(i+1)+') input').attr('disabled', false);
 
-					$("#recipients .row.recipient .glyphicon-plus:last").removeClass('glyphicon-plus').addClass('glyphicon-minus');
-					$("#recipients .row.recipient .glyphicon-minus:last").parent().removeClass('addressAdd').addClass('addressRemoveTo');
+					$("#recipients .row.recipient .bi-plus:last").removeClass('bi-plus').addClass('bi-dash');
+					$("#recipients .row.recipient .bi-dash:last").parent().removeClass('addressAdd').addClass('addressRemoveTo');
 					$("#recipients .row.recipient .addressRemoveTo").unbind("");
 					$("#recipients .row.recipient .addressRemoveTo").click(function(){
 						$(this).parent().parent().fadeOut().remove();
@@ -2060,8 +2511,8 @@ function drawPieChart(piechart, pegBalanceData) {
 
 				//$('#txoutputs #recipients').children().first().remove();
 
-				$("#recipients .glyphicon-plus:last").removeClass('glyphicon-plus').addClass('glyphicon-minus');
-				$("#recipients .glyphicon-minus:last").parent().removeClass('addressAdd').addClass('addressRemoveTo');
+				$("#recipients .bi:last").removeClass('bi-plus').addClass('bi-dash');
+				$("#recipients .bi-dash:last").parent().removeClass('addressAdd').addClass('addressRemoveTo');
 				$("#recipients .addressRemoveTo").unbind("");
 				$("#recipients .addressRemoveTo").click(function(){
 					$(this).parent().parent().fadeOut().remove();
@@ -2131,13 +2582,13 @@ function drawPieChart(piechart, pegBalanceData) {
 		
 		
 		//$("#inputs .txidClear:last").remove();
-		//$("#inputs .row:last div:last").append('<a href="javascript:;" class="txidClear" title="Remove TXid input" ><span class="glyphicon glyphicon-minus"></span></a>');
+		//$("#inputs .row:last div:last").append('<a href="javascript:;" class="txidClear" title="Remove TXid input" ><span class="bi bi-dash"></span></a>');
 
-		//$("#inputs .glyphicon-plus:last").removeClass('glyphicon-plus').addClass('glyphicon-minus');
-		$("#inputs .glyphicon-minus:last").parent().removeClass('txidClear').addClass('txidRemove').attr("title", "Remove TXid input");
+		//$("#inputs .bi-plus:last").removeClass('bi-plus').addClass('bi-dash');
+		$("#inputs .bi-dash:last").parent().removeClass('txidClear').addClass('txidRemove').attr("title", "Remove TXid input");
 
-		//$("#inputs .glyphicon-plus:last").addClass('hidden');
-		//$("#inputs .glyphicon-minus:last").parent().removeClass('txidAdd').addClass('txidRemove').attr("title", "Remove TXid input");
+		//$("#inputs .bi-plus:last").addClass('hidden');
+		//$("#inputs .bi-dash:last").parent().removeClass('txidAdd').addClass('txidRemove').attr("title", "Remove TXid input");
 
 		$("#inputs .tooltip:last").remove();
 		$("#inputs .txidRemove").click(function(){
@@ -2345,8 +2796,8 @@ function drawPieChart(piechart, pegBalanceData) {
 				
 
 
-				$("#recipients .row.recipient.send-back-reserve-as-change .glyphicon-plus").removeClass('glyphicon-plus').addClass('glyphicon-minus');
-				$("#recipients .row.recipient.send-back-reserve-as-change .glyphicon-minus").parent().removeClass('addressAdd').addClass('addressRemoveTo');
+				$("#recipients .row.recipient.send-back-reserve-as-change .bi-plus").removeClass('bi-plus').addClass('bi-dash');
+				$("#recipients .row.recipient.send-back-reserve-as-change .bi-dash").parent().removeClass('addressAdd').addClass('addressRemoveTo');
 				$("#recipients .addressRemoveTo").unbind("");
 				$("#recipients .addressRemoveTo").click(function(){
 					$(this).parent().parent().fadeOut().remove();
@@ -2410,8 +2861,8 @@ function drawPieChart(piechart, pegBalanceData) {
 			
 			//add the txIdAdd to the first input
 			/*
-			$('#inputs .row.inputs:nth-child(1) div:last').addClass('has-success').prepend('<a href="javascript:;" class="txidAdd" title="Add new TXid input"><span class="glyphicon glyphicon-plus"></span></a>');
-			//$("#inputs .txId:first").prepend('<a href="javascript:;" class="txidAdd" title="Add new TXid input"><span class="glyphicon glyphicon-plus"></span></a>');
+			$('#inputs .row.inputs:nth-child(1) div:last').addClass('has-success').prepend('<a href="javascript:;" class="txidAdd" title="Add new TXid input"><span class="bi bi-plus"></span></a>');
+			//$("#inputs .txId:first").prepend('<a href="javascript:;" class="txidAdd" title="Add new TXid input"><span class="bi bi-plus"></span></a>');
 
 			//$("#inputs .row.inputs:nth-child(1) div:last .txidAdd").removeClass("hidden");
 			
@@ -2567,12 +3018,12 @@ observer.observe(target, config);
 		$("#redeemFromStatus, #redeemFromAddress").addClass("hidden");
 
 		if(redeem.from=='multisigAddress'){
-			$("#redeemFromStatus").removeClass("hidden").html('<span class="glyphicon glyphicon-exclamation-sign"></span> You should use the redeem script, not the multisig address!');
+			$("#redeemFromStatus").removeClass("hidden").html('<i class="bi bi-exclamation-triangle-fill"></i> You should use the redeem script, not the multisig address!');
 			return false;
 		}
 
 		if(redeem.from=='other'){
-			$("#redeemFromStatus").removeClass("hidden").html('<span class="glyphicon glyphicon-exclamation-sign"></span> The address or multisig redeem script you have entered is invalid');
+			$("#redeemFromStatus").removeClass("hidden").html('<i class="bi bi-exclamation-triangle-fill"></i> The address or multisig redeem script you have entered is invalid');
 			return false;
 		}
 
@@ -2671,7 +3122,7 @@ observer.observe(target, config);
 						var clone = '<span><div class="row recipients mediator mediator_'+pubkey+'" rel="'+redeem.addr+'">'+$("#recipients .addressAddTo").parent().parent().html()+'</div><br></span>';
 						$("#recipients").prepend(clone);
 
-						$("#recipients .mediator_"+pubkey+" .glyphicon-plus:first").removeClass('glyphicon-plus');
+						$("#recipients .mediator_"+pubkey+" .bi-plus:first").removeClass('bi-plus');
 						$("#recipients .mediator_"+pubkey+" .address:first").val(payto).attr('disabled', true).attr('readonly',true).attr('title','Medation fee for '+$(mo).html());
 
 						var amount = ((fee*$("#totalInput").html())/100).toFixed(8);
@@ -2773,7 +3224,7 @@ observer.observe(target, config);
 			url:  coinjs.host + "/listunspent/" + redeem.addr,
 			dataType: "json",
 			error: function(data) {
-				$("#redeemFromStatus").removeClass("hidden").html('<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs!');
+				$("#redeemFromStatus").removeClass("hidden").html('<i class="bi bi-exclamation-triangle-fill"></i> Unexpected error, unable to retrieve unspent outputs!');
 			},
 			success: function(data) {
 				
@@ -2883,10 +3334,10 @@ observer.observe(target, config);
 							
 							
 					} else {
-						$("#redeemFromStatus").removeClass("hidden").html('<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, there are no unspent outputs.');
+						$("#redeemFromStatus").removeClass("hidden").html('<i class="bi bi-exclamation-triangle-fill"></i> Unexpected error, there are no unspent outputs.');
 					}
 				} else {
-					$("#redeemFromStatus").removeClass("hidden").html('<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs.');
+					$("#redeemFromStatus").removeClass("hidden").html('<i class="bi bi-exclamation-triangle-fill"></i> Unexpected error, unable to retrieve unspent outputs.');
 				}
 			},
 			complete: function(data, status) {
@@ -2980,7 +3431,7 @@ observer.observe(target, config);
 			}
 
 			if (decodingError) {
-				$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(' Unable to decode the Raw Transaction! ').prepend('<span class="glyphicon glyphicon-exclamation-sign"></span>');
+				$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(' Unable to decode the Raw Transaction! ').prepend('<i class="bi bi-exclamation-triangle-fill"></i>');
 				$(thisbtn).val('Submit').attr('disabled',false);
 				return ;
 			}
@@ -3027,11 +3478,11 @@ observer.observe(target, config);
 
 							} else {
 								//$("#walletSendConfirmStatus").removeClass("hidden").addClass('alert-danger').html(unescape(callback_result).replace(/\+/g,' '));
-								$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(unescape(callback_result)).prepend('<span class="glyphicon glyphicon-exclamation-sign"></span>').append("<br>You should perhaps try to raise the Transaction Fee?");;
+								$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(unescape(callback_result)).prepend('<i class="bi bi-exclamation-triangle-fill"></i>').append("<br>You should perhaps try to raise the Transaction Fee?");;
 								$(thisbtn).val('Submit').attr('disabled',false);
 							}
 						}else{
-							$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html('Unexpected error, please try again').prepend('<span class="glyphicon glyphicon-exclamation-sign"></span>');
+							$("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html('Unexpected error, please try again').prepend('<i class="bi bi-exclamation-triangle-fill"></i>');
 						}				
 
 	
@@ -3299,6 +3750,9 @@ observer.observe(target, config);
 
 	function decodePrivKey(){
 		var wif = $("#verifyScript").val();
+		if(wif.length==64){
+			wif = coinjs.privkey2wif(wif);
+		}
 		if(wif.length==51 || wif.length==52){
 			try {
 				var w2address = coinjs.wif2address(wif);
@@ -3319,6 +3773,8 @@ observer.observe(target, config);
 			return false;
 		}
 	}
+
+	
 
 	function decodePubKey(){
 		var pubkey = $("#verifyScript").val();
@@ -3345,13 +3801,16 @@ observer.observe(target, config);
 			var hex_cmp_pub = Crypto.util.bytesToHex((coinjs.numToBytes(coinjs.hdkey.pub,4)).reverse());
 			if(hex == hex_cmp_prv || hex == hex_cmp_pub){
 				var hd = coinjs.hd(s);
+				console.log('hd: ', hd);
 				$("#verifyHDaddress .hdKey").html(s);
 				$("#verifyHDaddress .chain_code").val(Crypto.util.bytesToHex(hd.chain_code));
 				$("#verifyHDaddress .depth").val(hd.depth);
 				$("#verifyHDaddress .version").val('0x'+(hd.version).toString(16));
 				$("#verifyHDaddress .child_index").val(hd.child_index);
 				$("#verifyHDaddress .hdwifkey").val((hd.keys.wif)?hd.keys.wif:'');
-				$("#verifyHDaddress .key_type").html((((hd.depth==0 && hd.child_index==0)?'Master':'Derived')+' '+hd.type).toLowerCase());
+				$("#verifyHDaddress .hdhexkey").val((hd.keys.privkey)?hd.keys.privkey:'');
+				
+				$("#verifyHDaddress .key_type").html((((hd.depth==0 && hd.child_index==0)?'Master':'Derived')+' '+hd.type + ' key'));
 				$("#verifyHDaddress .parent_fingerprint").val(Crypto.util.bytesToHex(hd.parent_fingerprint));
 				$("#verifyHDaddress .derived_data table tbody").html("");
 				deriveHDaddress();
@@ -3394,6 +3853,7 @@ observer.observe(target, config);
 			$("#hdpath").removeClass();
 		}
 	});
+
 
 	/* sign code */
 	$("#signPrivateKey").change(function(){
@@ -3578,7 +4038,8 @@ observer.observe(target, config);
 		$('a[href="' + location.hash + '"]').tab('show');
 	}
 
-	$(".showKey").click(function(){
+	$(document).on('click', '.showKey', function(){
+	//$(".showKey").click(function(){
 		if ($(this).data("hidden") === false) {
 			$("input[type='text']",$(this).parent().parent()).attr('type','password');
 			$(this).data("hidden", true);
@@ -3586,7 +4047,7 @@ observer.observe(target, config);
 		} else {
 			$("input[type='password']",$(this).parent().parent()).attr('type','text');
 			$(this).data("hidden", false);
-			$(this).text("hidden");
+			$(this).text("Hide");
 		}
 	});
 
@@ -3685,7 +4146,7 @@ observer.observe(target, config);
 			//configureBroadcast();
 			configureGetUnspentTx();
 
-			$("#statusSettings").addClass("alert-success").removeClass("hidden").html("<span class=\"glyphicon glyphicon-ok\"></span> Settings updates successfully").fadeOut().fadeIn();	
+			$("#statusSettings").addClass("alert-success").removeClass("hidden").html("<span class=\"glyphicon glyphicon-ok\"></span> Settings updated successfully").fadeOut().fadeIn();	
 		} else {
 			$("#statusSettings").addClass("alert-danger").removeClass("hidden").html("There is an error with one or more of your settings");	
 		}
@@ -3697,28 +4158,38 @@ observer.observe(target, config);
 
 		// deal with broadcasting settings
 		if(o[5]=="false"){
-			$("#coinjs_broadcast, #rawTransaction, #rawSubmitBtn, #openBtn").attr('disabled',true);
+			$("#coinjs_broadcast, #rawTransaction, #rawSubmitBtn, .loginButton").attr('disabled',true);
 			$("#coinjs_broadcast").val("coinb.in");	
 		} else {
 			$("#coinjs_broadcast").val(o[5]);
-			$("#coinjs_broadcast, #rawTransaction, #rawSubmitBtn, #openBtn").attr('disabled',false);
+			$("#coinjs_broadcast, #rawTransaction, #rawSubmitBtn, .loginButton").attr('disabled',false);
 		}
 
 		// deal with unspent output settings
 		if(o[6]=="false"){
-			$("#coinjs_utxo, #redeemFrom, #redeemFromBtn, #openBtn, .qrcodeScanner").attr('disabled',true);			
+			$("#coinjs_utxo, #redeemFrom, #redeemFromBtn, .loginButton, .qrcodeScanner").attr('disabled',true);			
 			$("#coinjs_utxo").val("coinb.in");
 		} else {
 			$("#coinjs_utxo").val(o[6]);
-			$("#coinjs_utxo, #redeemFrom, #redeemFromBtn, #openBtn, .qrcodeScanner").attr('disabled',false);
+			$("#coinjs_utxo, #redeemFrom, #redeemFromBtn, .loginButton, .qrcodeScanner").attr('disabled',false);
 		}
 
 		// deal with the reset
+		/*
 		$("#coinjs_pub").val(o[0]);
 		$("#coinjs_priv").val(o[1]);
 		$("#coinjs_multisig").val(o[2]);
 		$("#coinjs_hdpub").val(o[3]);
 		$("#coinjs_hdprv").val(o[4]);
+		*/
+
+		$("#coinjs_pub").val('0x'+(coinjs.pub).toString(16));
+		$("#coinjs_priv").val('0x'+(coinjs.priv).toString(16));
+		$("#coinjs_multisig").val('0x'+(coinjs.multisig).toString(16));
+
+		$("#coinjs_hdpub").val('0x'+(coinjs.hdkey.pub).toString(16));
+		$("#coinjs_hdprv").val('0x'+(coinjs.hdkey.prv).toString(16));	
+
 
 		$("#coinjs_extratimefield").val(o[7]);
 		$("#coinjs_symbol").val(o[8]);
@@ -3775,50 +4246,24 @@ observer.observe(target, config);
 	
 	/*Custom Settings*/
 	/*
-	 @ Check Password
+	 @ Validate Email address
 	*/
-		checkPassword = function (val) {
-		var str = val;
-		//var str = el.val();
-		
-		
-		
-		
-			var msg = '';
-			if (str.length < 12) {
-				msg= ("too_short");
-			} else if (str.length > 255) {
-				msg= ("too_long");
-			} else if (str.search(/\d/) == -1) {
-				msg= ("no_num");
-			} else if (str.search(/[a-z]/) == -1) {
-				msg= ("no_lower_case");
-			} else if (str.search(/[A-Z]/) == -1) {
-				msg= ("no_upper_case");
-			//} else if (str.search(/[^a-zA-Z0-9\!\@\#\$\%\^\&\*\(\)\_\+\.\=\,\;\:\!\-]/) != -1) {
-			} else if (str.search(/[^a-zA-Z0-9\!\@\§\½\€\¤\£\`\´\#\$\"\'\%\^\&\*\(\)\_\+\.\=\~\¨\|\,\;\:\!\-\[\]\}\{\/\\\?\>\<\^]/) != -1) {
-				msg= ("bad_char");
-			}else {
-				msg=("");
-				//$('.checkInputsPassword').addClass("hidden")
-			}
-			
-			// pattern to match : At least one number ,one letter and one special character
-			//var regex = /^(((.*\d.*[A-Z].*[!@#%&¨*¤()+-={}[\]"'*:.,<>_\-$€%^&amp;amp;*? ~].*))|(.*[A-Z].*\d.*[!@#%&¨*¤()+-={}[\]"'*:.,<>_\-$€%^&amp;amp;*? ~].*)|(.*[!@#%&¨*¤()+-={}[\]"'*:.,<>_\-$€%^&amp;amp;*? ~].*[A-Z].*\d.*)|(.*[!@#%&¨*¤()+-={}[\]"'*:.,<>_\-$€%^&amp;amp;*? ~].*\d.*[A-Z].*))$/i;
-			//var regex = /.*\d.*\w.*\D.*/i;
-			//if (!regex.test(str)) {msg= ("bad_char");}
-			
-			if (msg != '') {
-				//$('.checkInputsError').removeClass("hidden");
-				//$('.checkInputsPassword').removeClass("hidden").html('Password: '+msg);
-				return false;
-			}else{
-				//$('.checkInputsPassword').addClass("hidden").html('');
-				return true;
-			}
-		
+	validateEmail = function (email) {
 
-		
+	//function validateEmail(email) {
+    var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(email);
+  }
+
+	/*
+	 @ Check Password
+	 https://regex101.com/r/TzK4Sp/1
+	 https://stackoverflow.com/questions/33670870/regex-for-1-uppercase-1-special-character-and-1-lowercase
+	*/
+	validatePassword = function (val) {
+		var regex = /^(?=.{12,255})(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$€§%^£!»©«&*|←↓→+=¥½&<>;:.µ,^~¨¤{}´`+"()'/ \\-]).*$/g
+		var regex = /^(?=.{12,255})(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$€§%^£!»©«&*|←↓→+=¥½&<>;:.µ,^~¨¤{}´?`+"()'/ \\-]).{1,255}$/g
+		return regex.test(val);
 	}
 	
 	passwordFun = function (email, pass) {
@@ -3865,240 +4310,399 @@ observer.observe(target, config);
 
 	});
 	
-	//Check if user is logged in
 	/*
-	 @ 'login/session'
-	 @password
-	 @password2
-	 @email
+	@Check if user is logged in
 	*/
-	function checkUserLogin(profile_data) {
-		//var profile_data = (typeof profile_data === 'undefined') ? "" : profile_data;
-		profile_data = (typeof profile_data === 'undefined') ? "" : profile_data;
-	/*
-	var user_profile = { 
-		"email" : "email",
-		"wallet_type" : "regular",	//regular (login normal address), multisig (login multisig address), key (login with private key)
-		"remember_me" : boolean		//true or false (to keep user logged in)
-		"signatures" : 2		// total number of signatures required to spend, should be maximum the total objects of "passwords"
-		"passwords" : [
-			{
-				"password" : "blabla",
-			},
-			{
-				"password" : "blabla",
-			},
-			{
-				"password" : "blabla",
-			}
-		]
-	}
+	function checkUserLogin(sessionData, session = false) {
 
-	
-	//From Login
-	
-		"email" : email,
-		"wallet_type" : "",	//regular (login normal address), multisig (login multisig address), key (login with private key)
-		"remember_me" : remember_me,
-		"passwords" : [
-			{
-				"password" : pass,
-			},
-			{
-				"password" : pass2,
-			}
-		]
+		//check if we have a session, save to sessionData
+		//update global variable for user data
+		if (session == true)
+			profile_data = HTML5.sessionStorage('profile_data').get();
+			//console.log('session restored from HTML5')
+			//console.log('sessionData: ' , profile_data);
+
+		//***If the sessionData is empty just return
+		if(sessionData == null || sessionData === undefined || Object.keys(sessionData).length === 0) {
+			return ;
+		}
 		
-	*/
-		var check_profile_data;
-		var remember_me = false;
-		//Check if Remember Me option is set to true, save to HTML5 sessionStorage
-		if (typeof profile_data.passwords !== "undefined") {
-			if( (typeof profile_data.remember_me !== "undefined") &&  profile_data.remember_me.match(/^1|true|checked|on$/)){
-				remember_me = true;
-			}else
-				HTML5.sessionStorage('profile_data').remove();
+		var privkeyaes, privkeyaes2;
+
+		//***Handle login with importing backup wallet
+		if (sessionData.login_type == 'import_wallet') {
+			console.log('Login with Importing wallet backup');
 		}
 
-		
-		//Check if Profile Data object keys is undefined
-		if (typeof profile_data.passwords !== "undefined" && typeof profile_data.passwords[0].password !== "undefined" && ( typeof profile_data.email !== "undefined" && typeof profile_data.wallet_type !== "undefined" && typeof profile_data.signatures !== "undefined") ){
-				
-				var pass = profile_data.passwords[0].password;
-				if( checkPassword(pass) ){
-				
-					var email = profile_data.email.toLowerCase();
+		//***Handle login with Private Key wallet
+		if (sessionData.login_type == 'private_key') {
+			console.log('Login with Private Key');
 
-					var s = passwordFun(email, pass);
-								
-					coinjs.compressed = true;
-					var scriptPubKey = "";
-					
-					if (debug) {											
-						console.log('profile_data 1');
-						console.log(profile_data);
-					}
-					//Check Wallet Type
-					//if ( typeof profile_data.passwords[1].password !== "undefined" && checkPassword(profile_data.passwords[1].password) && profile_data.passwords[1].password != "") 
-					//if ( profile_data.passwords[1].password != "") 
-					//	profile_data.wallet_type = "multisig";
-					//else
-					//	profile_data.wallet_type = "regular";
-					
-					if (debug) {
-						console.log('profile_data 2');
-						console.log(profile_data);
-					}
-					//Check for Multisig address and Regular address
-					//if (profile_data.wallet_type == "multisig" && typeof profile_data.passwords[1].password !== "undefined") {
-					if (profile_data.wallet_type == "multisig" ) {
-						
-						//Create Multisig address
-						var pass2 = profile_data.passwords[1].password;
-						if( checkPassword(pass2) ){
-							
-							//Disable the use of creation of a multisig wallet with same public keys
-							if (pass != pass2) {
-								var s2 = passwordFun(email, pass2);
-								var keys = coinjs.newKeys(s);
-								var keys2 = coinjs.newKeys(s2);
-								var keys_combined = [keys.pubkey, keys2.pubkey];
-								
-								//console.log('keys_combined: '+keys_combined);
-								
-								//Check if pubkey is in correct format
-								if(coinjs.pubkeydecompress(keys.pubkey) && coinjs.pubkeydecompress(keys2.pubkey)){
-									//keys_.push(keys.pubkey); keys_.push(keys2.pubkey); console.log('keys_.push: '+keys_);
-									var multisig =  coinjs.pubkeys2MultisigAddress(keys_combined, 2);
-									//address, scriptHash, redeemScript
-									address = multisig["address"];
-									
-									var privkeyaes = CryptoJS.AES.encrypt(keys.wif, s);
-									//console.log('keys.wif: ', keys.wif);
-									//console.log('s: ', s);
+		}
 
-									var privkeyaes2 = CryptoJS.AES.encrypt(keys2.wif, s2);
+		//***Handle login with "email + password" wallet
+		if (sessionData.login_type == 'password') {
 
-									//console.log('keys2.wif: ', keys.wif);
-									//console.log('s2: ', s2);
-									
-									$("#walletKeys .redeemScript_wallet").val(multisig["redeemScript"]);
-									
-									$("#walletKeys .privkey2").val(keys2.wif);
-									$("#walletKeys .pubkey2").val(keys2.pubkey);
-									$("#walletKeys .privkeyaes2").val(privkeyaes2);
-									$("#walletKeys .wallet_multisig_keys").removeClass("hidden");
-							
-
-								}else{
-									$("#openLoginStatus").html("Error while creating Multisig address").removeClass("hidden").fadeOut().fadeIn();
-								}
-
-							}else{
-								$("#openLoginStatus").html("You must use 2 different passwords!").removeClass("hidden").fadeOut().fadeIn();
-							}
-
-						} else {
-							$("#openLoginStatus").html("Your 2nd password must at least have 12 chars and must include minimum 1 number, 1 uppercase letter, 1 lowercase letter and 1 special character from \"#$€%&\'()*+,-./:;<=>?@[\]^_`{|}~¤¨½§").removeClass("hidden").fadeOut().fadeIn();							
-						}
-						
-					//Create Regular address
-					}else{
-						
-						var keys = coinjs.newKeys(s);
-						
-						if(coinjs.pubkeydecompress(keys.pubkey)){
-
-							var address = keys.address;
-							var wif = keys.wif;
-							var pubkey = keys.pubkey;
-							var privkeyaes = CryptoJS.AES.encrypt(keys.wif, s);
-							$("#walletKeys .wallet_multisig_keys").addClass("hidden");
-							
-							
-						}else{
-							$("#openLoginStatus").html("Error while creating Regular address").removeClass("hidden").fadeOut().fadeIn();
-						}
-					}
-						if($("#walletSegwit").is(":checked")){
-							var sw = coinjs.segwitAddress(pubkey);
-							address = sw.address;
-						}
-
-						$(".amountCoinSymbol").text(coinjs.symbol);
-						$("#walletMail").html(email);
-						$("#walletAddress").html(address);
-						$("#walletAddressExplorer").html(address);
-						//$("#walletAddressExplorer").attr('href','http://explorer.bitbay.market/address/'+address);
-						//$("#walletHistory").attr('href','http://explorer.bitbay.market/address/'+address);
-						$("#walletAddressExplorer").attr('href','https://chainz.cryptoid.info/bay/address.dws?'+address+'.htm');
-						$("#walletHistory").attr('href','https://chainz.cryptoid.info/bay/address.dws?'+address+'.htm');
-
-						$("#walletQrCode").html("");
-						var qrcode = new QRCode("walletQrCode");
-						qrcode.makeCode("bitbay:"+address);
+			console.log('Login with Email+Password');
 
 
-						console.log('keys: ', keys);
-						$("#walletKeys .address").val(address);
-						$("#walletKeys .privkey").val(keys.wif);
-						$("#walletKeys .pubkey").val(keys.pubkey);
-						$("#walletKeys .privkeyaes").val(privkeyaes);
-						
-						//Load Wallet for Client
-						if(coinjs.pubkeydecompress(keys.pubkey) || (coinjs.pubkeydecompress(keys2.pubkey))){
-							//Store the profile_data on the Client side with HTML5 sessionStorage
-							if (remember_me)
-								HTML5.sessionStorage('profile_data').set(profile_data);
-							else
-								HTML5.sessionStorage('profile_data').remove();
-					
-							if (profile_data.wallet_type == "multisig"){
-								//BUG ? public keys not displayed on multisig wallet
-								//$("#walletKeys .wallet_maybe_multisig_keys").addClass("hidden");
-							}
-							
-							//Menu Account Info
-							$(".accountSessionLogin").addClass("hidden");
-							$(".accountSessionLogout").removeClass("hidden");
-							$(".walletEmail").text(email);
-              $(".walletEmail").attr("data-original-title", email);
-								
-							$("#openLogin").hide();
-							$("#openWallet").removeClass("hidden").show();
-							//giorgosk
-							$("body").addClass("loggedin").removeClass("loggedout");
+			profile_data.private_keys = [];
+			profile_data.public_keys = [];
 
-							//check if address is multisig, then sign with second private key
-							//var profile_data;
-							profile_data = HTML5.sessionStorage('profile_data').get();
-				
-							walletBalance();
-							checkBalanceLoop();
-              
-							
-							
-						}else{
-							$("#openLoginStatus").html("Error Unable to create Address").removeClass("hidden").fadeOut().fadeIn();
-						}
-					
-				} else {
-					$("#openLoginStatus").html("Your password must at least have 12 chars and must include minimum 1 number, 1 uppercase letter, 1 lowercase letter and 1 special character from \"!#$€%&\'()*+,-./:;<=>?@[\]^_`{|}~¤¨½§").removeClass("hidden").fadeOut().fadeIn();
+			//generate first private key
+			coinjs.compressed = true;
+			var s = passwordFun(sessionData.email, sessionData.passwords[0]);
+			var keys = coinjs.newKeys(s);
+
+			//check if generated Regular pubkey is valid
+			if (!coinjs.pubkeydecompress(keys.pubkey)) {
+				$(".walletLoginStatus").html("Error while creating Regular wallet address").removeClass("hidden").fadeOut().fadeIn();
+				return;
+			}
+
+			profile_data.public_keys.push(keys.pubkey);
+			profile_data.private_keys.push(keys.wif);
+
+			//we got a regular wallet address, save key-data to backup-fields
+			if (sessionData.wallet_type == "regular") {
+				profile_data.address = keys.address; //wif, pubkey, address
+				var privkeyaes = CryptoJS.AES.encrypt(keys.wif, s);
+			}
+
+			//is wallet multisig?
+			if (sessionData.wallet_type == "multisig") {
+
+				//create Multisig address
+				var s2 = passwordFun(sessionData.email, sessionData.passwords[1]);
+				var keys2 = coinjs.newKeys(s2);
+				var keys_combined = [keys.pubkey, keys2.pubkey];
+
+				//check if generated Multisig pubkeys is valid
+				if (!coinjs.pubkeydecompress(keys.pubkey) && !coinjs.pubkeydecompress(keys2.pubkey)) {
+					$(".walletLoginStatus").html("Error while creating Multisig wallet address").removeClass("hidden").fadeOut().fadeIn();
+					return;
 				}
-				
+				profile_data.public_keys.push(keys2.pubkey);
+				profile_data.private_keys.push(keys2.wif);
+
+				var multisig = coinjs.pubkeys2MultisigAddress(keys_combined, 2); //create 2-of-2 multisig wallet
+				profile_data.address = multisig["address"]; //address, scriptHash, redeemScript
+
+				privkeyaes = CryptoJS.AES.encrypt(keys.wif, s);
+				//console.log('keys.wif: ', keys.wif);
+				//console.log('s: ', s);
+				privkeyaes2 = CryptoJS.AES.encrypt(keys2.wif, s2);
+				//console.log('keys2.wif: ', keys.wif);
+				//console.log('s2: ', s2);
+
+				//save key-data to backup-fields
+				profile_data.redeem_script = multisig["redeemScript"];
+
+			}
+
+		}
+
+
+		//***All good! Go on!
+		if (sessionData.wallet_type == "regular") {
+			$('.walletPubKeys .redeemScript_wallet').parent().addClass('hidden');
+			$('.wallet_multisig_keys').addClass('hidden');
+			$('#walletKeys .privkey2').addClass('hidden');
+			$('.walletPubKeys .pubkey2').parent().addClass('hidden');
+			$("#walletKeys .privkeyaes2").addClass('hidden');
+		}
+
+		$("#walletKeys .privkey").val(profile_data.private_keys[0]);
+		$(".walletPubKeys .pubkey").val(profile_data.public_keys[0]);
+		$("#walletKeys .privkeyaes").val(privkeyaes);
+
+		//is wallet multisig?
+		if (sessionData.wallet_type == "multisig") {
+			$(".walletPubKeys .redeemScript_wallet").val(profile_data.redeem_script).parent().removeClass('hidden');;
+			$('.wallet_multisig_keys').removeClass('hidden');
+
+			$("#walletKeys .privkey2").val(profile_data.private_keys[1]).removeClass("hidden");
+			$(".walletPubKeys .pubkey2").val(profile_data.public_keys[1]).parent().removeClass("hidden");
+			$("#walletKeys .privkeyaes2").val(privkeyaes2).removeClass("hidden");
+			$(".walletPubKeys .redeemScript_wallet").removeClass("hidden");
+
+			$(".switch_pubkeys").removeClass("hidden");
+
+			
+
+			profile_data.pubkey_sorted = isArraySorted(profile_data.public_keys);
+
+			
+			//publickey sort notification
+			//if(profile_data.login_type != "import_wallet"){
+				//$('.publicKeySortNotification').removeClass('hidden')
+
+				if(profile_data.pubkey_sorted){
+					$('.publicKeyIsSorted').removeClass('hidden');
+					$('.publicKeyIsUnSorted').addClass('hidden');
+				}else{
+					$('.publicKeyIsSorted').addClass('hidden');
+					$('.publicKeyIsUnSorted').removeClass('hidden');
+				}
+			//}
+
 			
 		}
-		
 
-		$("#openLoginStatus").prepend('<span class="glyphicon glyphicon-exclamation-sign"></span> ');
+		$(".amountCoinSymbol").text(coinjs.symbol);
+		//$("#walletMail").html(email);
+		$("#walletAddress").html(profile_data.address);
+		$("#walletAddressExplorer").html(profile_data.address);
+		//$("#walletAddressExplorer").attr('href','http://explorer.bitbay.market/address/'+address);
+		//$("#walletHistory").attr('href','http://explorer.bitbay.market/address/'+address);
+		$("#walletAddressExplorer").attr('href', 'https://chainz.cryptoid.info/bay/address.dws?' + profile_data.address + '.htm');
+		$("#walletHistory").attr('href', 'https://chainz.cryptoid.info/bay/address.dws?' + profile_data.address + '.htm');
+
+
+		$("#walletQrCode").html("");
+		var qrcode = new QRCode("walletQrCode");
+		qrcode.makeCode("bitbay:" + profile_data.address);
+
+
+		//console.log('keys: ', keys);
+		$(".walletPubKeys .address").val(profile_data.address);
+
+
+		//Remember me - store the sessionData on the Client side with HTML5 sessionStorage 
+		if (sessionData.remember_me)
+			HTML5.sessionStorage('profile_data').set(sessionData);
+		else
+			HTML5.sessionStorage('profile_data').remove();
+
+
+		//Menu Account Info
+		$(".walletAddress").text(profile_data.address);
+		$(".walletAddress").attr("data-original-title", "Wallet Address");
+
+		$(".walletLogin").hide();
+		$("#openWallet").removeClass("hidden").show();
+		$("body").addClass("loggedin").removeClass("loggedout");
+
+
+
+		//Update user balance and set loop for updating the users balance!
+		walletBalance();
+		checkBalanceLoop();
+		console.log('End of checkUserLogin');
+		return;
 		
-		copyWalletInfo();	
 	}
-	//Check User Session
-	checkUserLogin(HTML5.sessionStorage('profile_data').get());
+
+	//***Check User Session
+	checkUserLogin(HTML5.sessionStorage('profile_data').get(), true);
 	
 	//Set correct Wallet type
-	$("#openWalletType").change();
+	//$("#openWalletType").change();
+
 
 
 });
+
+function getDecodedPrivKey(privkey){
+		var wif = privkey;
+		if(privkey.length==64){
+			wif = coinjs.privkey2wif(wif);
+		}
+		if(wif.length==51 || wif.length==52){
+			try {
+				var w2address = coinjs.wif2address(wif);
+				var w2pubkey = coinjs.wif2pubkey(wif);
+				var w2privkey = coinjs.wif2privkey(wif);
+
+	 			return { 
+					"address" : w2address.address,
+					"pubkey" : w2pubkey.pubkey,
+					"privkey_hex" : w2privkey.privkey,
+					"privkey_wif" : wif
+				}
+
+			} catch (e) {
+				return false;
+			}
+		} else {
+			return false;
+		}
+	}
+
+
+//***Functions for supporting AES encrypt/decrypt in python for BitBay/Halo
+	/*
+	@ check if array is sorted
+	*/
+
+	function isArraySorted(boxNumbers) {
+	  for (let i = 1; i < boxNumbers.length; i++) {
+	    if (boxNumbers[i - 1] > boxNumbers[i]) {
+	      return false;
+	    }
+	  }
+	  return true;
+	}
+	function isArraysEqual (arr1, arr2) {
+
+	  // Check if the arrays are the same length
+	  if (arr1.length !== arr2.length) return false;
+
+	  // Check if all items exist and are in the same order
+	  for (var i = 0; i < arr1.length; i++) {
+	    if (arr1[i] !== arr2[i]) return false;
+	  }
+
+	  // Otherwise, return true
+	  return true;
+	}
+
+	function base64ToHex(str) {
+	  const raw = atob(str);
+	  let result = '';
+	  for (let i = 0; i < raw.length; i++) {
+	    const hex = raw.charCodeAt(i).toString(16);
+	    result += (hex.length === 2 ? hex : '0' + hex);
+	  }
+	  return result.toUpperCase();
+	}
+
+	function hexToBase64(hexStr) {
+	 let base64 = "";
+	 for(let i = 0; i < hexStr.length; i++) {
+	   base64 += !(i - 1 & 1) ? String.fromCharCode(parseInt(hexStr.substring(i - 1, i + 1), 16)) : ""
+	 }
+	 return btoa(base64);
+	}
+
+	//modulo operator
+	//x.mod(y), works with negative numbers as well
+	//https://stackoverflow.com/questions/4467539/javascript-modulo-gives-a-negative-result-for-negative-numbers
+	//console.log( (-33).mod(32) )
+	Number.prototype.mod = function (n) {
+	  return ((this % n) + n) % n;
+	};
+
+	//function to behave like rstrip in python
+	function rStrip(x, characters) {
+	  var start = 0;
+	  var end = x.length - 1;
+	  while (characters.indexOf(x[end]) >= 0) {
+	    end -= 1;
+	  }
+	  return x.substr(0, end + 1);
+	}
+
+
+
+	function addPadding(dataText, dataHex, interrupt, pad, block_size=32) {
+	  var new_data, new_data_len, pad_string, remaining_len, to_pad_len;
+	  new_data = dataText + interrupt;
+	//console.log('dataHex: ' + dataHex);
+	//console.log('new_data: ' + new_data);
+	  new_data_len = new_data.length-1;
+	//console.log('new_data_len: ' + new_data_len);
+	  remaining_len = block_size - new_data_len;
+	//console.log('remaining_len: ' + remaining_len);
+	  to_pad_len = remaining_len.mod(block_size);
+		if (to_pad_len == 0)
+	    to_pad_len = 15
+		//console.log('to_pad_len: ' + to_pad_len);
+	        //pad_string = pad * to_pad_len
+		var pad_string = "";
+	  for(i=1; i<= to_pad_len;i++) { pad_string += pad}
+		//console.log('pad_string: ' + pad_string);
+		//console.log('new_data+ pad_string: ' + new_data+ pad_string);
+		//console.log('dataHex+ pad_string: ' + dataHex+ pad_string);
+	  return dataHex+interrupt+ pad_string;         //we only need to add padding to the hex encoded "dataText" and not the string itself!
+	}
+
+
+	function stripPadding(data, interrupt, pad){
+		data = rStrip(data, pad);
+		data = rStrip(data, interrupt);
+		return data;
+	}
+
+	//***Encrypt Text with secret key!
+	function encryptText(text, secretKey) {
+	  // The initialization vector (must be 16 bytes)
+	  var iv = aesjs.utils.utf8.toBytes('12345678abcdefgh');
+
+	  //secret must be hashed properly and then converted to bytes
+	  var keySHA = Crypto.SHA256(secretKey);
+	  var keySHABytes = aesjs.utils.hex.toBytes(keySHA);
+
+	  //someone decided to add "KEY: " infront of the text to encrypt!
+	  //so just do it!
+	  text = "KEY: "+ text;
+
+	  //convert text to bytes!
+	  var textBytes = aesjs.utils.utf8.toBytes(text);
+	  var textHex = aesjs.utils.hex.fromBytes(textBytes);
+
+	  //text MUST be in 16 bytes or multiple of 16 bytes, so add padding properly according it
+	  var textPaddedHex = addPadding(text, textHex, '01', '00');;
+	  var textBytesPadded = aesjs.utils.hex.toBytes(textPaddedHex);
+
+	  //encrypt with key and IV
+	  var aesCbc = new aesjs.ModeOfOperation.cbc(keySHABytes, iv);
+	  var encryptedBytes = aesCbc.encrypt(textBytesPadded);
+
+	  console.log('textBytes hex: '+ aesjs.utils.hex.fromBytes(textBytes));
+	  console.log('textBytesPadded hex: '+ aesjs.utils.hex.fromBytes(textBytesPadded));
+
+	  console.log('encryptedBytes: ', encryptedBytes);
+
+	  // To print or store the binary data, you may convert it to hex
+	  var encryptedHex = aesjs.utils.hex.fromBytes(encryptedBytes);
+	  var encryptedB64 = hexToBase64(encryptedHex);
+
+	  console.log('encryptedHex: ' + (encryptedHex));
+	  console.log('encryptedB64: ' + (encryptedB64));
+
+	  //return the encrypted text in base64
+	  return encryptedB64;
+	}
+
+	function decryptText(text, secretKey) {
+	  // The initialization vector (must be 16 bytes)
+	  var iv = aesjs.utils.utf8.toBytes('12345678abcdefgh');
+
+	  //secret must be hashed properly and then converted to bytes
+	  var keySHA = Crypto.SHA256(secretKey);
+	  var keySHABytes = aesjs.utils.hex.toBytes(keySHA);
+
+	  //remove "PASSWORDPROTECTED:" string from the encrypted text!
+	  //trim it if needed
+	  text = text.replace('PASSWORDPROTECTED:', '').trim();
+
+	  //convert base64 back to hex format
+	  var encryptedWalletHex = base64ToHex(text);
+
+	  encryptedHex =  encryptedWalletHex;
+	  console.log('encryptedWalletHex: '+ encryptedWalletHex);
+
+	  // When ready to decrypt the hex string, convert it back to bytes
+	  var encryptedBytes = aesjs.utils.hex.toBytes(encryptedWalletHex);     //works
+
+	  // The cipher-block chaining mode of operation maintains internal
+	  // state, so to decrypt a new instance must be instantiated.
+	  var aesCbc = new aesjs.ModeOfOperation.cbc(keySHABytes, iv);
+	  var decryptedBytes = aesCbc.decrypt(encryptedBytes);
+
+	  // Convert our bytes back into text
+	  var decryptedHex = aesjs.utils.hex.fromBytes(decryptedBytes);
+	  console.log('decryptedHex: ' + decryptedHex);
+
+	  var decryptedHexUnPadded = stripPadding(decryptedHex, '01', '0' );
+
+	  console.log('decryptedHexUnPadded: ' + decryptedHexUnPadded);
+	  var decryptedHexUnPaddedBytes = aesjs.utils.hex.toBytes(decryptedHexUnPadded);
+	  var decryptedText = aesjs.utils.utf8.fromBytes(decryptedHexUnPaddedBytes);
+	  console.log('decryptedText: ' + decryptedText);
+
+	  //strip out "KEY: " from the decrypted text
+	  //trim the remaining string
+	  return decryptedText.replace('KEY: ', '').trim();
+	}
