@@ -2,8 +2,8 @@
  * custom.js
  * 
  *
- * Custom JS Settings for Bitbay Offline Wallet
- * Created by anoxydoxy@gmail.com for Bitbay (BAY)
+ * Custom JS Settings for Bitbay Web Wallet (https://bitbay.market)
+ * Created by anoxydoxy@gmail.com for BitBay (BAY)
  */
 
  $.fn.removeClassPrefix = function(prefix) {
@@ -61,6 +61,10 @@ $(document).ready(function() {
     $("#multisigwallet").removeClass("active");
     $("#regularwallet").addClass("active");    
     //$(".form-openWalletTypeText").text("Regular Wallet");
+    
+    //empty multisig password2 field
+    $('#openPass2').val('');
+    $('#openPass2-confirm').val('');
   }
   function showMultisigWallet(){
     $("#openWalletType").val('multisig').trigger('change');
@@ -80,27 +84,42 @@ $(document).ready(function() {
     var target = $(e.target).attr("href");
     var id = $(e.target).attr("id");
     if(target === "#wallet" && id === "multisigwalletLink")
-      showMultisigWallet();      
+      showMultisigWallet();
   });
 	
   
   
-  //disable enable login/create button
-	$('#openBtn').prop('disabled', true);
-	$('#acceptTerms').on("change",function() {
-	 	if($(this).is(":checked")) {
-			$('#openBtn')
+  //***Disable enable login/create button
+	$('.loginhide .btn-flatbay').prop('disabled', true);
+	$('.acceptTerms').on("change",function(event) {
+	 	
+    parentElement = event.target.offsetParent.offsetParent;
+    var dataAttribute = parentElement.getAttribute('data-wallet-login-multistep-wizard');
+    //console.log('dataAttribute: ' + dataAttribute);
+    //$('section.login-box[data-wallet-login-multistep-wizard='+dataAttribute+'] input[type=submit]')
+
+
+
+    if($(this).is(":checked")) {
+			$('section.login-box[data-wallet-login-multistep-wizard='+dataAttribute+'] input[type=submit]')
+        .prop('disabled', false)
+        .removeClass("btn-flatbay-inactive")
+      /*$('.loginButton')
 				.prop('disabled', false)
-				.removeClass("btn-flatbay-inactive");
+				.removeClass("btn-flatbay-inactive");*/
 	 	}else{
-			$('#openBtn')
+			$('section.login-box[data-wallet-login-multistep-wizard='+dataAttribute+'] input[type=submit]')
+      .prop('disabled', true)
+        .addClass("btn-flatbay-inactive");
+      /*$('.loginButton')
 				.prop('disabled', true)
-				.addClass("btn-flatbay-inactive");
+				.addClass("btn-flatbay-inactive");*/
+
 		}
 	});
 
   //remember button pressing
-	$('#remember').on("change",function() {
+	$('.loginRemember').on("change",function() {
 	 	if($(this).is(":checked")) {
 			$('#rememberMe').val("true");
 			//$('#rememberMe option:eq(true)').prop('selected', true)
@@ -131,23 +150,30 @@ $(document).ready(function() {
   //i.e. label input label input label input input label input etc
   $('#print').on('click', function (e) {
     //console.log(profile_data);
-    if(profile_data == null || profile_data === "")
+    if(profile_data === undefined || Object.keys(profile_data).length === 0) {
       profile_data = HTML5.sessionStorage('profile_data').get();
+      console.log('profile_data IS NOT set - get from HTML5');
+    }else{
+      console.log('profile_data is set already');
+    }
       
     var print = [];
 
     print.push("<h2>BitBay - Wallet Backup Information!</h1>");
     
-    //passwords
-    print.push("<h3>Email</h2>");
-    print.push("<div>" + profile_data.email + "</div>");
+    if(profile_data.login_type =="password"){
+      //passwords
+      print.push("<h3>Email</h2>");
+      print.push("<div>" + profile_data.email + "</div>");
 
-    print.push("<h3>Password</h2>");
-    print.push("<div>" + safe_tags(profile_data.passwords[0].password) + "</div>");
+      print.push("<h3>Password</h2>");
+      print.push("<div>" + safe_tags(profile_data.passwords[0]) + "</div>");
 
-    if(profile_data.passwords[1].password !== undefined){
-      print.push("<h3>Password2</h2>");
-      print.push("<div>" + safe_tags(profile_data.passwords[1].password) + "</div>");
+
+      if(profile_data.passwords[1] !== undefined && profile_data.passwords[1] != ""){
+        print.push("<h3>Password2</h2>");
+        print.push("<div>" + safe_tags(profile_data.passwords[1]) + "</div>");
+      }
     }
     
     var lastIn = "";
@@ -174,66 +200,6 @@ $(document).ready(function() {
     printNewWindow("printArea");
 	});
   
-  
-  //extra validation functions
-  function validateElem(id,label) {
-    if($(id).val() == $(id +"-confirm").val()){
-      return "";
-    }
-    else {
-      return label + " does not match<br/>";
-    }
-  }
-
-  function confirmEmailPass(){  
-    var elem = $('#openBtn');
-    if(elem[0] == null) 
-      return ;
-    var oldClick = $._data(elem[0], 'events').click[0].handler;
-		elem.off('click');
-
-    elem.click(function(){
-      $("#openLoginStatus").addClass("hidden");
-      var confirmPass = $("#confirmPass").prop('checked');
-      var error = "";
-      var email = $("#openEmail").val()
-      if(!validateEmail(email)){
-          error = "Not a valid Email<br/>";
-      }
-      
-      //if(window.confirm("Are You Sure?")){
-      if(confirmPass){
-        error += validateElem("#openEmail","Email");
-        error += validateElem("#openPass","Password");
-        error += validateElem("#openPass2","Password2");
-        if(error){
-          $("#openLoginStatus").html(error).removeClass("hidden").fadeOut().fadeIn();
-          $("#openLoginStatus").prepend('<span class="glyphicon glyphicon-exclamation-sign"></span> ');
-
-
-          //$("#errormessages").html(error);
-      		return false;          
-        }else{
-          //$("#errormessages").html("");
-          oldClick();          
-        }
-      } else if(error) {
-        //$("#errormessages").html(error);
-        $("#openLoginStatus").html(error).removeClass("hidden").fadeOut().fadeIn();
-        $("#openLoginStatus").prepend('<span class="glyphicon glyphicon-exclamation-sign"></span> ');
-
-        return false;          
-      } else {
-        oldClick();
-      }
-    });    
-  }
-  confirmEmailPass();
-  
-  function validateEmail(email) {
-    var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    return re.test(email);
-  }
 
 
   //changing type of wallet seletion from dropdown to tab/button
@@ -263,6 +229,10 @@ $(document).ready(function() {
       $(elements).removeClass("hidden");
 	 	}else{
       $(elements).addClass("hidden");
+      $('#openEmail-confirm').val('').removeClass("unconfirmed");
+      $('#openPass-confirm').val('').removeClass("unconfirmed");
+      $('#openPass2-confirm').val('').removeClass("unconfirmed");
+      
 		}
 	});
   
@@ -301,16 +271,23 @@ $(document).ready(function() {
   $(".navbar-nav").on("click",function() {
     //console.log("navbar click");
     $(".navbar-collapse").removeClass("in");
+    
+
+    
   });
   //hide menu when click outside
+  /*
   $("nobody").on("click",function() {
-    //console.log("body click");
+    console.log("body click");
     $(".navbar-collapse").removeClass("in");
   });
+  */
 
 
 	//Navbar Submenus
 	$('.navbar a.dropdown-toggle').on('click', function(e) {
+    //$('body').append('<div class="modal-backdrop fade in"></div>');
+
         var $el = $(this);
         var $parent = $(this).offsetParent(".dropdown-menu");
         $(this).parent("li").toggleClass('open');
@@ -354,96 +331,150 @@ $(document).ready(function() {
 		$('ul.dropdown-menu [data-toggle=tab]').not($el).closest("li").removeClass("active");
 	});
 
-	
-	//Theme Switcher
-	$('#switcher-bootstrap').on('click', '#themes a', function(){
-	  var $this = $(this);
-	  //$('#bootstrap-current').text($this.text()); $('#bootstrap-css').attr('href', $this.attr('data-theme'));
-	  $('#bootstrap-current').text($this.text()); 
-	  $('#bootstrap-css').attr('href', 'assets/css/themes/'+$this.text()+'/bootstrap.min.css');
-	  //reset();
-	});
 
 
-	//Login Check/Uncheck
-	$('.button-checkbox').each(function(){
-		var $widget = $(this),
-			$button = $widget.find('button'),
-			$checkbox = $widget.find('select#rememberMe'),
-			color = $button.data('color'),
-			settings = {
-					on: {
-						icon: 'glyphicon glyphicon-check'
-					},
-					off: {
-						icon: 'glyphicon glyphicon-unchecked'
-					}
-			};
 
-		$button.on('click', function () {
-			
-			/*
-			if ( !$checkbox.is(':checked') )
-				$checkbox.attr('checked', true);
-			else
-				$checkbox.removeAttr('checked');
-			*/
-			
-			//$("select#rememberMe option[value]")..prop('selected', 'selected');
-			if ($checkbox.val() !=  'true')
-				$checkbox.val('true');
-			else
-				$checkbox.val('false');
-			
-			//$checkbox.prop('checked', !$checkbox.is(':checked'));
-			//$checkbox.triggerHandler('change');
-			updateDisplay();
-		});
-
-		$checkbox.on('change', function () {
-			updateDisplay();
-		});
-
-		function updateDisplay() {
-			var isChecked = ($checkbox.val() == 'true') ? true : false ;
-			// Set the button's state
-			$button.data('state', (isChecked) ? "on" : "off");
-
-			// Set the button's icon
-			$button.find('.state-icon')
-				.removeClass()
-				.addClass('state-icon ' + settings[$button.data('state')].icon);
-
-			// Update the button's color
-			if (isChecked) {
-				$button
-					.removeClass('btn-default')
-					.addClass('btn-' + color + ' active');
-			}
-			else
-			{
-				$button
-					.removeClass('btn-' + color + ' active')
-					.addClass('btn-default');
-			}
-		}
-		function init() {
-			updateDisplay();
-			// Inject the icon if applicable
-			if ($button.find('.state-icon').length == 0) {
-				$button.prepend('<i class="state-icon ' + settings[$button.data('state')].icon + '"></i> ');
-			}
-		}
-		init();
+		
+		
     
 
+  //WalletLogin START - Multistep Wizard
+  var walletLoginStepChild = 1;
+  var walletLoginSteplength = $("#wallet .login-container section").length - 1;
+
+  $("section").not("section:nth-of-type(1)").addClass('hide');
+  //$("section").not("section:nth-of-type(1)").hide();
+  $("section")
+    .not("section:nth-of-type(1)")
+    .css("transform", "translateX(100px)");
+
+  
+
+    /*for (i=0; i<=walletLoginSteplength;i++){
+      console.log('steps: '+ i);
+      $('#wallet .login-container .multistep_progress_bar').append(' '+(i+1));
+    }
+    */
+
+  //multistep wallet login options- section click navigation
+  $("#wallet .login-container .multistep_progress_bar .callout").click(function () {
+    var goToStep = $(this).attr("data-multistep-wizard-step");
+
+    if(goToStep == 2)
+      showRegularWallet();
+    if(goToStep == 3) {
+      showMultisigWallet();
+      goToStep = 2;
+    }
+    
+    var currentSection = $("#wallet .login-container section:nth-of-type(" + goToStep + ")");
+    
+    currentSection.removeClass('hide').fadeIn();
+    currentSection.css("transform", "translateX(0)").fadeIn();
+    currentSection.prevAll("#wallet .login-container section").css("transform", "translateX(-100px)").fadeOut();
+    currentSection.nextAll("#wallet .login-container section").css("transform", "translateX(100px)").fadeOut();
+    $("#wallet .login-container section").not(currentSection).addClass('hide').fadeOut();
+    //$("#wallet .login-container section").not(currentSection).hide();
+
+    //show back options for wallet login wizard
+    if(goToStep > 1)
+      $('#multistep-wizard-reset').removeClass('hide').fadeIn();
+    else
+      $('#multistep-wizard-reset').addClass('hide').fadeOut();
+  });
+  
+  //multistep wallet login - back button
+  $("#wallet .login-container #multistep-wizard-reset, .nav #wallet_options").click(function () {
+    goToStep = 1;
+
+    //reset imported_wallet data if users has imported a backup file!
+    if (Object.keys(profile_data).indexOf('imported_wallet') !== -1){
+      profile_data.imported_wallet = [];
+      var fileDropArea = document.querySelectorAll('.file-drop-area')
+
+      fileDropArea[0].classList.remove('has-error');
+      fileDropArea[0].classList.remove('is-active');
+      fileDropArea[0].classList.remove('is-active-imported');
+
+      
+      fileDropArea[1].classList.add('hidden');
+      fileDropArea[1].classList.remove('has-error');
+      fileDropArea[1].classList.remove('is-active');
+      fileDropArea[1].classList.remove('is-active-imported');
+      
+
+      var fileDropAreaMessage = document.querySelectorAll('.file-drop-area .file-msg');
+      fileDropAreaMessage[0].innerText = 'or drag and drop the file here';
+      fileDropAreaMessage[1].innerText = 'or drag and drop the file here';
+
+      //clear choosen file on input
+      var fileDropAreaFile = document.querySelectorAll('.file-drop-area .file-input');
+      fileDropAreaFile[0].value = null;
+      fileDropAreaFile[1].value = null;
+
+      document.querySelector('section.login-box[data-wallet-login-multistep-wizard=import_wallet] .walletLoginStatus').classList.remove('alert-success');
+      document.querySelector('section.login-box[data-wallet-login-multistep-wizard=import_wallet] .walletLoginStatus').innerText = '';
+
+      //$('#openBtnImportWallet').prop('disabled', true).addClass("btn-flatbay-inactive");
+    }
+
+    var currentSection = $("#wallet .login-container section:nth-of-type(" + goToStep + ")");
+    currentSection.removeClass('hide').fadeIn();
+    currentSection.css("transform", "translateX(0)").fadeIn();
+    currentSection.prevAll("#wallet .login-container section").css("transform", "translateX(-100px)").fadeOut();
+    currentSection.nextAll("#wallet .login-container section").css("transform", "translateX(100px)").fadeOut();
+    $('#multistep-wizard-reset').addClass('hide').fadeOut();
+    $('.walletLoginStatus').addClass('hide');
+    $("#wallet .login-container section").not(currentSection).addClass('hide').fadeOut();
+    //$("#wallet .login-container section").not(currentSection).hide();
+    
+  });
+  
+
+
+  //multistep section click navigation
+  /*
+  $("#wallet .login-container .button").click(function () {
+    
+    var id = $(this).attr("id");
+    if (id == "next") {
+      $("#prev").removeClass("disabled");
+      if (walletLoginStepChild >= walletLoginSteplength) {
+        $(this).addClass("disabled");
+        $("#submit").removeClass("disabled");
+      }
+      if (walletLoginStepChild <= walletLoginSteplength) {
+        walletLoginStepChild++;
+      }
+    } else if (id == "prev") {
+      $("#next").removeClass("disabled");
+      $("#submit").addClass("disabled");
+      if (walletLoginStepChild <= 2) {
+        $(this).addClass("disabled");
+      }
+      if (walletLoginStepChild > 1) {
+        walletLoginStepChild--;
+      }
+    }
+    
+    var currentSection = $("#wallet .login-container section:nth-of-type(" + walletLoginStepChild + ")");
+    currentSection.fadeIn();
+    currentSection.css("transform", "translateX(0)");
+    currentSection.prevAll("#wallet .login-container section").css("transform", "translateX(-100px)");
+    currentSection.nextAll("#wallet .login-container section").css("transform", "translateX(100px)");
+    $("#wallet .login-container section").not(currentSection).hide();
+
+    
+  });
+  */
+  //WalletLogin END - Multistep Wizard
 
 	});
 	
 
 
-  var walletVersion = "1.135";   //is used for human versioning
-  var walletVersionCode = "9";  //is used for the update versioning of the wallet app
+  var walletVersion = "1.2";   //is used for human versioning
+  var walletVersionCode = "1";  //is used for the update versioning of the wallet app
 
 
   //render client version text
@@ -516,17 +547,399 @@ $.get( app_version_url , function( data ) {
 }
 
 
-  //Dynamic Peg Pie Chart
-  //https://codepen.io/miyavibest/pen/wdtaC
+//Dynamic Peg Pie Chart
+//https://codepen.io/miyavibest/pen/wdtaC
   
-  /* <3 
+/* <3 
 https://codepen.io/SergioLMacia/pen/eYYMjbm
 */
 
+//***Function to Copy-click on input fields
+document.addEventListener(
+  "click",
+  function (event) {
+
+    // Only fire if the target has class copy
+    if(!event.target.classList.contains('copy-input')) return;
+    //console.log('class: ', event.target.classList.contains('copy-input'));
+    //if (!event.target.matches("copy-input")) return;
+
+    //console.log('closest: ' , $(event).closest('input'));
+
+    //get the input-field value to copy
+    var copyInputValue = event.target.parentElement.previousElementSibling.value;
+    //console.log('event.target.parentElement.previousElementSibling: ', event.target.parentElement.previousElementSibling);
+
+    $(event.target.parentElement.previousElementSibling).fadeOut().fadeIn();
+
+    if (!navigator.clipboard) {
+      // Clipboard API not available
+      return;
+    }
+
+    try {
+      navigator.clipboard.writeText(copyInputValue);
+      //document.getElementById("copy-status").innerText = "Copied to clipboard";
+      setTimeout(function () {
+        //document.getElementById("copy-status").innerText = "Click to copy";
+      }, 1200);
+    } catch (err) {
+      console.error("Failed to copy!", err);
+    }
+  },
+  false
+);
+
+//*** File reader - Import wallet backup
 
 
+  // highlight drag area
+  $('.file-input').on('dragenter focus click', function() {
+    $(this)[0].parentElement.classList.add('is-active');
+  });
 
-});
+  // back to normal state
+  $('.file-input').on('dragleave blur drop', function(e) {
+    $(this)[0].parentElement.classList.remove('is-active');
+  });
+
+  // change inner text
+  $('.file-input').on('change', async function(e) {
+    
+
+    //Local file reading not allowed by browser
+    if (!window.FileReader) {
+      var message = '<p>The <a href="http://dev.w3.org/2006/webapi/FileAPI/" target="_blank">File API</a>s are not fully supported by this browser.</p> <p>Upgrade your browser to the latest version.</p>';
+      $textContainer.html(message);
+      return ;
+    }
+    
+    //console.log('fileDropArea: ', e.target);
+    //e.target.offsetParent.children[1].children[0].firstElementChild
+    var fileDropAreaClass, fileDropArea = $(this)[0].parentElement, filekey;
+    if(fileDropArea.classList.contains('importfile1')) {
+      fileDropAreaClass = 'importfile1';
+      filekey = 0;
+    }
+    if(fileDropArea.classList.contains('importfile2')) {
+      fileDropAreaClass = 'importfile2';
+      filekey = 1;
+    }
+
+    
+    //Define variable for client data if needed
+    if(Object.keys(profile_data).indexOf('imported_wallet') === -1) {
+      profile_data.imported_wallet = [];
+      profile_data.imported_wallet[0] = [];
+      profile_data.imported_wallet[1] = [];
+    }
+
+    //validate file
+    //console.log('fileDropArea.classList: ', fileDropArea.classList);
+
+    var filesCount = $(this)[0].files.length;
+    $textContainer = $(this).prev();
+    var fileToImport = $(this)[0].files[0];
+
+    //only 1 file can be import at a time with max-size of 1024bytes
+    if (filesCount != 1 || fileToImport.size > 1024){
+      
+      profile_data.imported_wallet[filekey] = [];
+
+      //$('#openBtnImportWallet').prop('disabled', true).addClass("btn-flatbay-inactive");
+
+      fileDropArea.classList.add('has-error');
+      fileDropArea.classList.remove('is-active');
+      fileDropArea.classList.remove('is-active-imported');
+      $textContainer.html('<span class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill"></i> Filesize error on imported file!!</span>');
+      $('section.login-box[data-wallet-login-multistep-wizard=import_wallet] .walletLoginStatus').text('').addClass("hidden").addClass("hide").addClass('alert-danger').fadeOut().fadeIn();
+      return ;
+    }
+
+    var fileName = $(this).val().split('\\').pop();
+    $textContainer.html('<i class="bi bi-file-check"></i> '+ fileName);
+
+    //read the file
+    var reader = new FileReader();
+    reader.readAsText(fileToImport);
+    
+    //Error reading the import wallet file
+    reader.onerror = function() {
+      profile_data.imported_wallet[filekey] = [];
+
+      //console.log('Error reading the file!' + reader.error);
+      $textContainer.html('<span class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill"></i> Error reading the file!</span>');
+      //Enable the login button!
+      fileDropArea.classList.add('has-error');
+      fileDropArea.classList.remove('is-active');
+      return ;
+    }
+    //Success in reading the import wallet file
+    reader.onload = async function() {
+      //console.log(reader.result);
+      
+      //check if imported wallet backup is in supported format
+      var linesSplitted = splitLines(reader.result);
+      var linesLength = linesSplitted.length;
+      
+      //Wallet file-format must have either 2 or 4 lines!
+      if(linesLength == 2  || linesLength == 4 || linesLength == 5) {
+
+        // somehow the exported backupfile from client wallet has a new empty 5th line, just skip the last 5th line
+        if(linesLength == 5)
+          linesLength =4;
+        //***validate imported backup file
+        //get private key fileline
+        privKeyFileLine = (linesLength-1);
+
+        //console.log('privKeyFileLine: ' + privKeyFileLine);
+        console.log('linesSplitted: ' + linesSplitted);
+
+          //console.log('privKeyFileLine2: ' + privKeyFileLine);
+
+          var privkey1, privkey2, decodedPrivkey1, decodedPrivkey2, decryptedKey;
+          //check if private key is encrypted!
+          console.log('before if: '+ linesSplitted[privKeyFileLine]);
+          if ((linesSplitted[privKeyFileLine]).includes("PASSWORDPROTECTED:")) {
+
+            //call decryptModal() with
+            //linesSplitted[privKeyFileLine], fileDropAreaClass
+            
+
+            try {
+              decryptedKey = await decryptPrivKeyModal(linesSplitted[privKeyFileLine], fileDropAreaClass, {'encryptedText': linesSplitted[privKeyFileLine]});
+
+              //console.log('Success!');
+              fileDropArea.classList.remove('has-error');
+              fileDropArea.classList.add('is-active-imported');
+
+              //console.log('decryptedKey: ', decryptedKey)
+
+              
+              //is imported private keys from the files the same?
+              //is this even needed lol :)
+              //if ( isArraysEqual(profile_data.imported_wallet[0], profile_data.imported_wallet[1])) {}
+              /*
+              format of the imported client wallet file:
+              [0] DO NOT LOSE, ALTER OR SHARE THIS FILE - WITHOUT THIS FILE, YOUR MONEY IS AT RISK. BACK UP! YOU HAVE BEEN WARNED! Bitmessage key: (32byte hex key)
+              [1] pubkey1
+              [2] pubkey2
+              [3] (PASSWORDPROTECTED:)PRIVATE KEY
+              */
+
+              //save import import-file to client data
+              profile_data.imported_wallet[filekey] = linesSplitted;
+              profile_data.imported_wallet[filekey]['decrypted'] = decryptedKey;
+
+
+              $('section.login-box[data-wallet-login-multistep-wizard=import_wallet] .walletLoginStatus').html('Decrypting your wallet with the secret key was successfull.<br>You may now proceed with the login!').removeClass("hidden").removeClass("hide").removeClass('alert-danger').addClass('alert-success').fadeOut().fadeIn();
+            } catch(e) {
+              fileDropArea.classList.add('has-error');
+              fileDropArea.classList.remove('is-active-imported');
+
+
+              //console.log('Promise Error!');
+              //console.log('e', e);
+            }
+
+        }else if ((linesSplitted[privKeyFileLine]).includes("KEY:")) {
+          linesSplitted[privKeyFileLine] = (linesSplitted[privKeyFileLine]).replace('KEY:', '').trim();
+
+          //private key is not encrypted, so decode it!
+          var decodedPrivkey = getDecodedPrivKey(linesSplitted[privKeyFileLine]);
+          if(decodedPrivkey) {
+            $('section.login-box[data-wallet-login-multistep-wizard=import_wallet] .walletLoginStatus').html('Your file was imported successfully.<br>You may now proceed with the login!').removeClass("hidden").removeClass("hide").removeClass('alert-danger').removeClass('alert-warning').addClass('alert-success').fadeOut().fadeIn();
+          
+            //save import import-file to client data
+              profile_data.imported_wallet[filekey] = linesSplitted;
+              profile_data.imported_wallet[filekey]['decrypted'] = decodedPrivkey;
+          }
+
+        } else {
+            //error format
+        }
+
+
+        //decrypt encrypted wallet!
+
+        
+        //console.log(document.querySelector('.file-drop-area.has-error'));
+        //Check if there is any FileDropAreas's with errors
+        //if not, enable login button
+        if (document.querySelector('.file-drop-area.has-error') === null) {
+          //$('#openBtnImportWallet').prop('disabled', false).removeClass("btn-flatbay-inactive");
+        }else{
+          $textContainer.html('or drag and drop the file here');
+
+          //$('#openBtnImportWallet').prop('disabled', true).addClass("btn-flatbay-inactive");
+          $('section.login-box[data-wallet-login-multistep-wizard=import_wallet] .walletLoginStatus').html('').addClass("hidden").addClass("hide").addClass('alert-danger').removeClass('alert-success').fadeOut().fadeIn();
+        }
+        return;
+      }
+
+      profile_data.imported_wallet[filekey] = [];
+
+      //Fileformat is not supported, Error: Wrong Backup Format
+      fileDropArea.classList.add('has-error');
+      fileDropArea.classList.remove('is-active');
+      fileDropArea.classList.remove('is-active-imported');
+      $textContainer.html('<span class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill"></i> Wrong Backup format!</span>');
+      $('section.login-box[data-wallet-login-multistep-wizard=import_wallet] .walletLoginStatus').text('').addClass("hidden").addClass("hide").addClass('alert-danger').fadeOut().fadeIn();
+      //Disable the login button!
+      //$('#openBtnImportWallet').prop('disabled', true).addClass("btn-flatbay-inactive");
+    }
+  });
+
+function StartPromise() {
+    var onePromise = new Promise((resolve, reject) => {
+      // We call resolve(...) when what we were doing async succeeded, and reject(...) when it failed.
+      // In this example, we use setTimeout(...) to simulate async code. 
+      // In reality, you will probably be using something like XHR or an HTML5 API.
+      
+        $("#btnSave").click(function(){resolve('yay');});
+        
+        $('#myModal').on('hidden.bs.modal', function (e) {
+          reject('boo');
+        })
+        
+        $('#myModal').modal('show');
+    });
+    
+    onePromise.then((successMessage) => {
+      // successMessage is whatever we passed in the resolve(...) function above.
+      // It doesn't have to be a string, but if it is only a succeed message, it probably will be.
+      console.log(successMessage);
+      $('#myModal').modal('hide');
+    }).catch((reason) => {
+        console.log(reason);
+        $('#myModal').modal('hide');
+    });
+}
+
+async function decryptPrivKeyModal(encryptedText, fileDropAreaClass, data){
+
+  //console.log('encryptedText: ' + encryptedText);
+  //console.log('fileDropAreaClass: ' + fileDropAreaClass);
+  //console.log('data: ',  data);
+  var decodedPrivkey = false;
+  var decryptModal;
+  //encryptedText = encryptedText.trim();
+
+  onePromise = new Promise((resolve, reject) => {
+  decryptModal = BootstrapDialog.show({
+                closable: true,
+                closeByBackdrop: false,
+                closeByKeyboard: false,
+                title: 'Decrypt Private Key',
+                nl2br: false,
+                message: document.querySelector('.decryptPrivateKey').innerHTML,
+                //message: '<div class="callout callout-no-border m-1">  <label class="form-control" for="secretKey1">Secret Key 1:</label> <div class="form-group input-group">  <input id="secretKey1" name="secretKey" type="password" class="form-control secretKey" placeholder="Private Key" required>           <span class="input-group-btn">             <button class="showKey btn btn-default" type="button">Show</button>           </span>          </div> <hr class=""><div class="alert alert-danger walletDecryptStatus"><i class="bi bi-exclamation-triangle-fill"></i></div></div>',
+                onshown: function(dialogRef) {
+                  $('.encryptedMessage').text(dialogRef.getData('encryptedText'));
+                  dialogRef.getButton('modal-proceed-btn').disable();
+              },
+                onhide: function(dialogRef){
+                    //reject('Process cancelled!');
+                    return true;  //close the dialog
+                },
+                data: {
+                    
+                    //'encryptedText1': '', //encrypted private key 1
+                    //'encryptedText2': ''  //encrypted private key 2
+                    'decodedKey': ''
+                    
+                },
+                buttons: [{
+                    id: 'modal-cancel-btn',
+                    label: 'Cancel',
+                    icon: 'bi bi-x',
+                    cssClass: ' none',
+                    action: function(dialogRef){
+                      alert('decodedKey: ' + dialogRef.getData('decodedKey'));
+                      //alert('ok: ' + dialogRef.setData('sencryptedText', importedWalletBackup[0][privKeyFileLine]));
+                      //alert('ok: ' + dialogRef.getData('sencryptedText'));
+                      reject('Process cancelled!');
+                      dialogRef.close();
+                    }
+                  }, {
+                    id: 'modal-decrypt-btn',
+                    label: 'Decrypt',
+                    icon: 'bi bi-unlock-fill',
+                    //cssClass: 'btn-flatbay',
+                    action: function(dialogRef) {
+                        //dialogRef.close();
+                        var decryptWithSecret1 = dialogRef.getModalBody().find('input').val();
+                        //has-success
+                        decrypted1 = decryptText(dialogRef.getData('encryptedText'), decryptWithSecret1);
+                        console.log('decrypted1: ', decrypted1);
+
+                        decodedPrivkey = getDecodedPrivKey(decrypted1);
+                        if(!decodedPrivkey){
+                          dialogRef.getModalBody().find('.walletDecryptStatus').removeClass('hidden').find('.alert').html("Error decrypting the Wallet! <br>").removeClass('hidden').removeClass('alert-success').addClass('alert-danger');
+                          dialogRef.setData('decodedKey', decodedPrivkey);
+                          //reject('Error decrypting the Wallet!');
+                        } else{
+                          dialogRef.getModalBody().find('.walletDecryptStatus').removeClass('hidden').find('.alert').html("Success: Decrypted private key is valid! <br>").removeClass('hidden').removeClass('alert-danger').addClass('alert-success');
+                          dialogRef.getButton('modal-cancel-btn').disable();
+                          dialogRef.getButton('modal-decrypt-btn').disable();
+                          dialogRef.getButton('modal-proceed-btn').enable();
+                          resolve(decodedPrivkey);
+                          //dialogRef.close();
+                          
+                          
+                        }
+
+                    }
+                  }, {
+                    id: 'modal-proceed-btn',
+                    label: 'Proceed',
+                    icon: 'bi bi-door-open-fill',
+                    cssClass: 'btn-success',
+                    action: function(dialogRef){
+                      dialogRef.close();
+                    }
+                }]/*,
+                callback: function(result) {
+                    // result will be true if button was clicked, while it will be false if users close the dialog directly.
+
+                    if (result)
+                      resolve('yayyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy');
+                    else
+                      reject('nooooooooooooooooooooooooooooooooooooo')
+
+                    console.log('Result is: ' + result);
+                    console.log('decodedKey: '+ decryptModal.getData('decodedKey'));
+                    return result;
+                }*/
+            });
+
+
+  //decryptModal.setData('encryptedText', linesSplitted[privKeyFileLine]);
+  decryptModal.setData('encryptedText', data.encryptedText);
+
+  });
+
+  onePromise.then((successMessage) => {
+      // successMessage is whatever we passed in the resolve(...) function above.
+      // It doesn't have to be a string, but if it is only a succeed message, it probably will be.
+      
+      //console.log('successMessage: ',  successMessage);
+      //$('#myModal').modal('hide');
+    }).catch((reason) => {
+        
+        //console.log('catchReason: ',  reason);
+        //$('#myModal').modal('hide');
+    });
+
+  
+  console.log('onePromise: ' + onePromise);
+  return onePromise;
+}
+
+//***Function to split string into lines
+//https://www.w3resource.com/javascript-exercises/fundamental/javascript-fundamental-exercise-139.php
+var splitLines = str => str.split(/\r?\n/); //splitLines(arg);
+
 
 //Create Notifies for users for Balance change 
 PNotify_helper = function (title, text, type) {
@@ -593,11 +1006,41 @@ $('.generatePassword').on("click", function () {
       $("#newMnemonicxprv").val("");
     }
 
+    if($el[0].dataset.inputFor == 'HDBrainwallet') {
+      $("#newHDxpub").val("");
+      $("#newHDxprv").val("");
+    }
+
+    if($el[0].dataset.inputFor == 'brainwallet') {
+      $("#newBitcoinAddress").val("");
+      $("#newPubKey").val("");
+      $("#newPrivKey").val("");
+      
+    }
+
+    
+
+
     var inputElPass = $el.attr( "data-input-for");
     $("#"+inputElPass).val(generatePassword());
   });
-/*
 
+/*
+ @ Theme Switch Toggle Button
+*/
+const toggleButton = document.querySelector(".toggleTheme");
+
+toggleButton.addEventListener("click", () => {
+ document.body.classList.toggle("dark-mode");
+});
+
+
+/*
+//promise-based dialog modal 
+//https://loading.io/lib/modal/
+
+//promise await try catch
+https://www.valentinog.com/blog/throw-async/
 if (document.readyState === "complete" || (document.readyState !== "loading" && !document.documentElement.doScroll)) {
    // Document already fully loaded
    ready();
@@ -645,3 +1088,4 @@ document.onreadystatechange = function () {
 
 domReady(() => console.log("DOM is ready, come and get it!"));
 */
+
