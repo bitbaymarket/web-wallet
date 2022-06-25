@@ -1359,8 +1359,8 @@ async function init_broadcast_progress_bar(txinputs_total, manualTransaction=1) 
 		var total = (devamount.val()*1) + (txfee.val()*1);
 
 		$.each($("#walletSpendTo .output"), function(i,o){
-			var amount = $('.amount',o).trim();
-			var address = $('.addressTo',o).trim();
+			var amount = $('.amount',o);
+			var address = $('.addressTo',o);
 
 			total += amount.val()*1;
 
