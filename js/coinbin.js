@@ -1,5 +1,6 @@
 var debug = true;
 var bip39 = new BIP39('en');
+var coinbinjs = {}; 
 /*
 
 	//multisig wallet options
@@ -596,7 +597,6 @@ document.querySelector('.loginButton').addEventListener('click', function () {
 			]
 		};
 		*/
-
 		console.log('profile_data: ', profile_data);
 		checkUserLogin(profile_data);
 		return ;
@@ -617,77 +617,11 @@ document.querySelector('.loginButton').addEventListener('click', function () {
 
 
 
-	$(".o2penBtn").click(function(){
-		console.log('$("#openBtc clicked');
-		var pass = $("#openPass").val();
-		var pass2 = $("#openPass2").val();
-		var remember_me = $("#rememberMe").val();
-		var email = $("#openEmail").val().toLowerCase();
-		var email = email.trim();
-		var walletType = $("#regularwallet").hasClass("active") ? "regular" : "multisig";
-		
-
-		profile_data = { 
-		"email" : email,
-		"wallet_type" : walletType,	//regular (login normal address), multisig (login multisig address), key (login with private key)
-		"remember_me" : remember_me,
-		"signatures" : 1,
-		"passwords" : [
-				{
-					"password" : pass,
-				}
-			]
-		};
-
-		//save the second key 
-		if(pass2 != "") {
-			profile_data.passwords.push({"password" : pass2});
-			profile_data.signatures = 2;
-		}
-
-
-/*
-old: 
-profile_data:"{"email":"email@test.com","wallet_type":"multisig","remember_me":"true","signatures":2,"passwords":[{"password":"pass1"},{"password":"pass2"}]}"
-
-
-profile_data = { 
-	"address" : "",
-	"email" : email,
-	"login_type" : "", //"password" (email & password login), "private_key" login, "mnemonic" login, "hdmaster" login
-	"wallet_type" : walletType,	//regular (login normal address), multisig
-	"remember_me" : remember_me,
-	"pubkey_sorted": false,	//it must be sorted if user wants to import to BitBay Client Wallet
-	"signatures" : 1,	//total signatures/private keys needs for signing a transaction!
-	"passwords" : [
-			{"password" : pass},
-			{"password" : pass2}
-		],
-	"private_keys" : [
-			{"key" : ""},
-			{"key" : ""}
-		],
-	"pub_keys" : [
-			{"key" : ""},
-			{"key" : ""}
-		],
-	"deterministic" : [
-			{"xpub" : ""},
-			{"xprv" : ""},
-			{"seed" : ""}
-		]
-	};
-
-		*/
-		//checkUserLogin(JSON.parse(profile_data));
-		checkUserLogin(profile_data);
-	});
-
 
 	$(".walletLogout").click(function(e){
 		
 		//reset login options
-		$(".nav #wallet_options").click();
+		$(".nav .wallet_options").click();
 		
 		//reset input fields and related messages
 		$("#openEmail").val("");
@@ -751,7 +685,7 @@ profile_data = {
 		$("#walletKeys .privkeyaes2").addClass('hidden');
 		*/
 
-		//Remove HTML5 Sessions and emppty client data
+		//Remove HTML5 Sessions and empty client data
 		HTML5.sessionStorage('profile_data').remove();
 		profile_data = {};
 		
@@ -3390,16 +3324,6 @@ observer.observe(target, config);
 		$("#transactionFee").val((fee>0)?fee:'0.00');
 	}
 
-	$("#optionsCollapse").click(function(){
-		if($("#optionsAdvanced").hasClass("hidden")){
-			$("#glyphcollapse").removeClass('glyphicon-collapse-down').addClass('glyphicon-collapse-up');
-			$("#optionsAdvanced").removeClass("hidden");
-		} else {
-			$("#glyphcollapse").removeClass('glyphicon-collapse-up').addClass('glyphicon-collapse-down');
-			$("#optionsAdvanced").addClass("hidden");
-		}
-	});
-
 	/* broadcast a transaction */
 
 	$("#rawSubmitBtn").click(function(){
@@ -3966,15 +3890,7 @@ observer.observe(target, config);
 		$("#sighashTypeInfo").html($("option:selected",this).attr('rel')).fadeOut().fadeIn();
 	});
 
-	$("#signAdvancedCollapse").click(function(){
-		if($("#signAdvanced").hasClass("hidden")){
-			$("span",this).removeClass('glyphicon-collapse-down').addClass('glyphicon-collapse-up');
-			$("#signAdvanced").removeClass("hidden");
-		} else {
-			$("span",this).removeClass('glyphicon-collapse-up').addClass('glyphicon-collapse-down');
-			$("#signAdvanced").addClass("hidden");
-		}
-	});
+	
 
 	/* page load code */
 
@@ -3993,6 +3909,7 @@ observer.observe(target, config);
 		return r;
 	}
 
+	//url hash load url parameters
 	var _getBroadcast = _get("broadcast");
 	if(_getBroadcast[0]){
 		$("#rawTransaction").val(_getBroadcast[0]);
@@ -4006,6 +3923,7 @@ observer.observe(target, config);
 		$("#verifyBtn").click();
 		window.location.hash = "#verify";
 	}
+
 
 	$(".qrcodeBtn").click(function(){
 		$("#qrcode").html("");
@@ -4035,7 +3953,10 @@ observer.observe(target, config);
 	$('#inputs *[title!=""], #inputs abbr[title!=""]').tooltip({'placement':'left'});
 
 	if (location.hash !== ''){
-		$('a[href="' + location.hash + '"]').tab('show');
+		try {
+			$('a[href="' + location.hash + '"]').tab('show');
+		} catch (e) {
+		}
 	}
 
 	$(document).on('click', '.showKey', function(){
@@ -4056,12 +3977,21 @@ observer.observe(target, config);
 		history.pushState(null, null, '#home');
 		$("#header .active, #content .tab-content").removeClass("active");
 		$("#wallet").addClass("active");
+
+		console.log('#home clicked!');
 	});
 
+	
 	$('a[data-toggle="tab"]').on('click', function(e) {
 		e.preventDefault();
 		if(e.target && $(e.target).attr('href')) {
-			history.pushState(null, null, '#'+$(e.target).attr('href').substr(1));
+			var targetLink = $(e.target).attr('href').substr(1);
+			history.pushState(null, null, '#'+targetLink);
+
+			console.log('e.target: ' , $(e.target).attr('href').substr(1));
+			//e.prevAll("#wallet .login-container section").removeClass("active");
+			$('.dropdown-menu-navlist li').removeClass('active');
+    	//currentSection.nextAll("#wallet .login-container section").css("transform", "translateX(100px)").fadeOut();
 		}
 	});
 
@@ -4529,6 +4459,14 @@ function getDecodedPrivKey(privkey){
 		}
 	}
 
+function objectGetKeyByValue(object, value) {
+      for (var prop in object) {
+          if (object.hasOwnProperty(prop)) {
+              if (object[prop] === value)
+              return prop;
+          }
+      }
+  }
 
 //***Functions for supporting AES encrypt/decrypt in python for BitBay/Halo
 	/*

@@ -13,7 +13,6 @@
 (function () {
 
 	var coinjs = window.coinjs = function () { };
-	
 
 
 	/* public vars */

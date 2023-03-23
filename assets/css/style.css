@@ -1,5 +1,13 @@
 @import 'fonts/pangram-sans-rounded/styles.css';
 
+
+:root {
+  --safe-area-inset-bottom: env(safe-area-inset-bottom);
+}
+
+
+
+
 /* 
 Prepare for dark mode theme
 :root {
@@ -50,6 +58,13 @@ Prepare for dark mode theme
   color: var(--placeholder-color);
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+  margin: 0;
+  padding: 0;
+}
 
 html {
 	height: 100%;
@@ -158,14 +173,29 @@ boxes #f7f7f7
 
 
 /* new menu newmenu */
-.navbar-nav .open .dropdown-menu {
-	color: white;
-	min-width: 234px !important;
+.dropdown.open.dropdown-modal:before,
+.dropup.open.dropup-modal:before{
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background:#ddd;
+    background: rgba(100,100,100,0.5);
+    content: '';
+    
+}
+
+.navbar-nav .open .dropdown-menu,
+.open .dropdown-menu-navlist {
+	color: #fefefe;
+	min-width: 234px;
 	background-color: #4d3aaf;
 	border-radius: 8px;
+  max-width: 240px;
 }
 .dropdown-menu>li>a {
-  color: white;
+  color: #fefefe;
 	font-size: 16px;
 	line-height: 1.5;
 }
@@ -1037,6 +1067,7 @@ fieldset[disabled] .form-control.can-copy {
 .input-group .form-control {
   border-top-right-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
+  
 }
 .input-group .input-group-btn:first-child,
 .input-group .input-group-btn:first-child *,
@@ -1158,9 +1189,10 @@ fieldset[disabled] .form-control.can-copy {
 	background-color: #f7f7f7;
   position: absolute;
   right: 0;
-  bottom: 0;
+  bottom: -50px;
   left: 0;
   border-radius: 0 !important;
+
 }
 #footer a {
 	color: #999999;
@@ -2253,20 +2285,29 @@ p {
 	margin-top: 10px;
 	margin-bottom: 10px;
 }
+/*
+.open > .dropdown-menu {
+  display: block;
+}
 
-
-
-
+.dropdown .open .dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: auto;
+  z-index: 1000;
+  float: left;
+  min-width: 160px;
+  right: 0;
+  max-width: 240px;
+}
+*/
 @media (max-width: 767px) {
 	.navbar-nav .open .dropdown-menu {
     position: absolute;
     top: 100%;
     left: auto;
     z-index: 1000;
-    float: left;
-    min-width: 160px;
-		right: 0;
-		max-width: 240px;
+		right: 7px;
 	}
 	.tab-content.active:not(#wallet), .loggedout .tab-content.active {
 	  background: #f7f7f7;
@@ -2284,3 +2325,209 @@ p {
 	}
 
 }
+
+
+
+/*bottom bar*/
+.footer-menu {
+  z-index: 99;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: space-between;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  visibility: hidden;
+  background-color: #fff;
+
+  border-top: 1px solid rgb(231, 227, 235);
+
+  border-radius: 0 !important;
+  padding-top: 5px;
+  padding-right: 8px;
+  padding-left: 8px;
+  padding-bottom: env(safe-area-inset-bottom);
+
+  flex-direction: row;
+    height: 50px;
+    bottom: 0;
+    justify-content: space-around;
+    align-items: center;
+    /*padding: 0 1rem;*/
+  
+
+  }
+/*
+  @supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .footer-menu {
+      padding-bottom: calc(var(--safe-area-inset-bottom) + 1rem);
+    }
+  }
+  */
+
+.footer-menu .footer-menu-icon-block {
+  border: 0;
+  border-radius: 16px;
+background: transparent none repeat scroll 0% 0%;
+cursor: pointer;
+height: 44px;
+
+display: block;
+text-align: center;
+}
+
+.footer-menu .footer-menu-icon-block div {
+display: flex;
+flex-direction: column;
+-moz-box-pack: center;
+justify-content: center;
+-moz-box-align: center;
+align-items: center;
+}
+
+
+.footer-menu .footer-menu-icon-block:hover {
+  color: red;
+  
+  background: rgb(239, 244, 245) none repeat scroll 0% 0%;
+  /*padding: 0 10px;*/
+}
+
+.footer-menu .footer-menu-icon {
+  line-height: 1;
+  color: #6456ab;
+  font-size: 20px;
+  position: relative;
+  top: 2px;
+}
+
+.footer-menu .footer-menu-text {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 2px;
+  color: #99A3BA;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+/*.dropdown-menu.navbar-toggle-menu {*/
+.footer-menu .dropup.open .dropdown-menu {
+  background-color: #4d3aaf;
+}
+
+
+.footer-menu .dropup .dropdown-menu {
+    -webkit-transition: all 0.5s;
+    -moz-transition: all 0.5s;
+    -ms-transition: all 0.5s;
+    -o-transition: all 0.5s;
+    transition: all 0.5s;
+    
+
+    max-height: 0;
+    display: block;
+    overflow: hidden;
+    opacity: 0;
+
+    right: -40px;
+    position: absolute;
+}
+
+.footer-menu .dropup.open .dropdown-menu {
+    max-height: fit-content;
+    opacity: 1;
+    /*
+    transform: translateY(0);
+    */
+}
+
+.footer-menu .footer-menu-icon-block > a,
+.footer-menu .footer-menu-icon-block > button {
+display: inline-block;
+border: 1px solid #fefefe;
+padding: 1px 8px;
+/*border-radius: inherit;
+background-color: inherit;
+outline:  none;
+*/
+
+}
+
+.footer-menu .footer-menu-icon-block > a:focus,
+.footer-menu .footer-menu-icon-block > button:focus{
+  outline:none ;
+}
+
+/* btn dropdown-toggle */
+
+
+@media screen and (max-width: 550px) {
+  .footer-menu {
+    visibility: visible;
+  }
+
+
+.popover-title {
+  font-weight: 600;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+.popover-title, .popover-content {
+  color: #333;
+  
+}
+
+
+/* menu icon */
+/*width: 5rem;
+  height: 100vh;*/
+/*
+.nav__list {
+  visibility: hidden;
+  background: white;
+  box-shadow: 0px 0px 10px #666;
+  padding: 1rem 0;
+  
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  z-index:  999;
+}
+.nav__item {
+  list-style: none;
+  font-size: 1rem;
+  text-align: center;
+  transition: all 200ms ease-in;
+}
+.nav__item .menu_icon {
+  fill: var(--clr-gray400);
+  width: 2rem;
+  transition: all 200ms ease-in;
+}
+.nav__item .menu_icon:hover {
+  fill: var(--clr-gray500);
+}
+.nav__item a {
+  color: var(--clr-gray400);
+  text-decoration: none;
+}
+.nav__item a:hover {
+  color: var(--clr-gray500);
+}
+
+@media screen and (max-width: 550px) {
+  .nav__list {
+    visibility: visible;
+    flex-direction: row;
+    width: 100vw;
+    height: 5rem;
+    bottom: 0;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 1rem;
+  }
+
+}
+*/

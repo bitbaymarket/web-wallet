@@ -15,7 +15,8 @@
      });
      return this;
  };
- 
+
+//For Print Backups! 
 function printDiv(divName) {
   var printContents = document.getElementById(divName).innerHTML;
   var originalContents = document.body.innerHTML;
@@ -29,15 +30,58 @@ function printNewWindow(divName){
   w.print();
   //w.close();              
 }
- 
+
+/*
+ @ wallet steps/state url handler
+*/
+var walletStateLogin = {"options": {1: "wallet", 2: "regular", 3: "multisig", 4: "private_key", 5: "import_wallet"}, "active":{}};
+var historyUrl =[];
+
+//get url parameters
 function getUrlVars() {
   var vars = {};
   var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi,    
   function(m,key,value) {
     vars[key] = value;
   });
+  console.log('url vars: ', vars);
   return vars;
 }
+
+
+
+//https://dmitripavlutin.com/parse-url-javascript/
+//https://stackoverflow.com/questions/23699666/javascript-get-and-set-url-hash-parameters
+function getUrlHash(){
+  
+  var pageHashNavigate = {'page': '', 'subpage': '', 'subpagenext': ''};
+  try {
+    //"#wallet?param1=value1&param2=value2.."
+    var urlHash = window.location.search+window.location.hash, 
+    urlHashPage='', urlHashSubPage='';
+    if(urlHash.includes('?')){
+      urlHashPage = urlHash.split('?')[0];  //for i.e #wallet [ "#wallet", "login=privatekey&second=secondvar14b13" ]
+    
+      if(urlHash.includes('='))
+        urlHashSubPage = urlHash.split('?')[1].split('=');  //for i.e [ "login=privatekey", "second=secondvar14b13" ]
+    }
+
+    console.log('getUrlHash: ', urlHash);
+    var goToStep = 0;
+    if (urlHashPage == "#wallet" && urlHashSubPage[1] !== undefined)
+      goToStep = objectGetKeyByValue(walletStateLogin.options, urlHashSubPage[1]);
+
+    pageHashNavigate =  {'page': urlHashPage, 'subpage': urlHashSubPage, 'subpagenext': goToStep};
+  } catch (err) {
+      console.error("No page to navigate to", err);
+  }
+
+  return pageHashNavigate;
+}
+
+
+
+
 
 $(document).ready(function() {
   
@@ -45,6 +89,81 @@ $(document).ready(function() {
   if (location.hostname === "localhost" || location.hostname === "127.0.0.1" || location.hostname === ""){
     $("body").addClass("localhost");
   }
+
+
+
+//login option state handler
+window.addEventListener("hashchange", function () {
+console.log('=============NEW==================')
+ historyUrl.push(location.hash); 
+ if(historyUrl.length > 2){ 
+   historyUrl.splice(0,historyUrl.length-2)
+ }
+console.log("Last Page History: ", historyUrl[0]);
+var urlHash = window.location.search+window.location.hash;
+console.log('urlHash: ', urlHash);
+
+  //check if we are returning from none "login-option" pages!
+  if(historyUrl[0].length>2){
+    if(!historyUrl[0].includes('#wallet') && urlHash.includes('#wallet?login')) {
+      $('a[href="#wallet"]').tab('show');
+      console.log('show wallet and return!')
+      console.log('===============================')
+      return;
+    }
+  }
+  //#wallet/login=privatekey&second=secondvar14b13
+  //becomes
+  
+  
+
+  urlHashPage = urlHash.split('?')[0];  //for i.e #wallet [ "#wallet", "login=privatekey&second=secondvar14b13" ]
+  //urlHashSubPage = urlHash.split('&')[1].split('&');  //for i.e [ "login=privatekey", "second=secondvar14b13" ]
+
+  console.log('urlHashPage0: ' + urlHashPage);
+  
+  //no login option has been choosen
+  /*if(window.location.hash == urlHashPage) {
+      console.log('NO - login option has been choosen');
+  }else{
+    
+  }
+  */
+  
+    if(urlHashPage.includes('#wallet') || urlHashPage == '') {
+      $('a[href="#wallet"]').tab('show');
+     
+      console.log('--->inne');
+      try {
+        //if(walletStateLogin.active.login_step ) {  //login option is selected => show all login options
+        if ((walletStateLogin.active.login_step && historyUrl[0].includes('#wallet') && !urlHash.includes('#wallet?')) || (walletStateLogin.active.login_step && urlHash == '')) {  //login option is selected => show all login options
+          goToLoginOption(1);
+          console.log('1 is clicked');
+        }else{
+          goToLoginOption(walletStateLogin.active.login_step);
+          console.log(walletStateLogin.active.login_step+' is clicked');
+        }
+      } catch (err) {
+          console.error("Failed to nagivate to Login Option!", err);
+      }
+    }else if(urlHashPage == '#wallet?') {
+      $('a[href="#wallet"]').tab('show');
+    }else
+      console.log('---??---');
+    
+  /*
+  var pageLocation = window.location.search;
+  var pageHash = window.location.hash;
+  console.log('pageLocation: ' + pageLocation);
+  console.log('pageHash: ' + pageHash);
+  */
+
+  
+
+  return true;
+  
+});
+
 
   if(getUrlVars()['r'] == 'success'){
     //alert alert-success fade in 
@@ -55,6 +174,8 @@ $(document).ready(function() {
     $('#header').after(message);
   }
 
+  
+	
   //handle pressing menu items or tabs on top of regular/multisig wallet
   function showRegularWallet(){
     $("#openWalletType").val('regular').trigger('change');
@@ -72,12 +193,12 @@ $(document).ready(function() {
     $("#multisigwallet").addClass("active");
     //$(".form-openWalletTypeText").text("Multisig m-of-n Wallet");
   }  
-	$("#regularwallet,a[href$='#wallet']").on("click", function () {
+  $("#regularwallet,a[href$='#wallet']").on("click", function () {
     showRegularWallet();
-	});
-	$("#multisigwallet,a[href$='#multisigwallet']").on("click", function () {
+  });
+  $("#multisigwallet,a[href$='#multisigwallet']").on("click", function () {
     showMultisigWallet();
-	});
+  });
   //individual multisig does not have its own tab area 
   //we need this workaround when menu item is clicked 
   $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
@@ -85,9 +206,7 @@ $(document).ready(function() {
     var id = $(e.target).attr("id");
     if(target === "#wallet" && id === "multisigwalletLink")
       showMultisigWallet();
-  });
-	
-  
+  });  
   
   //***Disable enable login/create button
 	$('.loginhide .btn-flatbay').prop('disabled', true);
@@ -132,12 +251,17 @@ $(document).ready(function() {
 
   //add class to body to know what tab we are 
   //this helps with css
-	$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+	/*$('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
 	  var target = $(e.target).attr("href") // activated tab
 		target = target.substring(1);
 	  $("body").removeClassPrefix("aTab-");
 		$("body").addClass("aTab-" + target);
 	});
+*/
+  // Initialize popover component
+    $('[data-toggle="popover"]').popover();
+
+    $('.dropdown-toggle').dropdown();
 
 
   /* Escape HTML tags */
@@ -267,14 +391,56 @@ $(document).ready(function() {
     }
   });
   
+/*  
   //hide menu when clicking
   $(".navbar-nav").on("click",function() {
-    //console.log("navbar click");
+    console.log("navbar click");
     $(".navbar-collapse").removeClass("in");
-    
+  });
+
+
+
+  $(".dropdown-menu-bottom").on("click",function() {
+
+    $('.footer-menu .dropup .dropdown-menu').css({"display": "block", "position": "absolute", "top": "unset"});
+  });
+
+
+  $(".navbar-menu-toggle").on("click",function() {
+    console.log("togglar");
+
+    //
+    //$('.dropdown-menu-nav').toggleClass('open');
 
     
+    console.log('this: ', this);
+
+    var navMenu;
+    if(this.classList.contains('navbar-menu-top'))
+      navMenu = "top";
+    
+    if(this.classList.contains('navbar-menu-bottom'))
+      navMenu = "bottom";
+
+    
+    if(navMenu == "top"){
+      $('.footer-menu .dropup .dropdown-menu').css({"display": "table", "position": "fixed", "top": "50px"});
+      console.log('top');
+    }
+    if(navMenu == "bottom"){
+      $('.footer-menu .dropup .dropdown-menu').css({"display": "block", "position": "absolute", "top": "unset", "visibility": "visible"});
+      console.log('bottom');
+    }
+
+    document.querySelector('.dropdown-menu-nav').classList.toggle('open');
+    
+
+    return false; //needed or else addClass('open') wont be triggered
+    
+    
   });
+*/  
+  
   //hide menu when click outside
   /*
   $("nobody").on("click",function() {
@@ -285,8 +451,9 @@ $(document).ready(function() {
 
 
 	//Navbar Submenus
-	$('.navbar a.dropdown-toggle').on('click', function(e) {
-    //$('body').append('<div class="modal-backdrop fade in"></div>');
+	/*
+  icee remove
+  $('.navbar a.dropdown-toggle').on('click', function(e) {
 
         var $el = $(this);
         var $parent = $(this).offsetParent(".dropdown-menu");
@@ -301,10 +468,14 @@ $(document).ready(function() {
         return false;
 	});
 
+  */
+
   var loc = window.location.pathname;
   var dir = loc.substring(0, loc.lastIndexOf('/'));
-  //console.log(dir);
+  console.log('dir: ', dir);
   
+  /*
+  icee remove
   $('.navbar a').not('.dropdown-toggle').on('click', function(e){
     if ( window.location.pathname == '/buy.php' ){
       var href = $(this).attr("href");
@@ -312,6 +483,7 @@ $(document).ready(function() {
       window.location.href = dir + "/" + href;
     }
   });
+  */
   
   
   $("#buyBay").on('click', function(e){
@@ -323,13 +495,17 @@ $(document).ready(function() {
     window.location.href = dir + "/buy.php?wallet=" + wallet + "&bc=" + bc;
   });
   
-	//Remove active class for other menus except for the one which is "clicked"
+  /*
+	icee remove
+  //Remove active class for other menus except for the one which is "clicked"
 	$('ul.dropdown-menu [data-toggle=tab]').on('click', function(e) {
 		var $el = $(this);
 		//$('ul.dropdown-menu [data-toggle=tab]').not($(this).parents("li")).addClass("activeHejsan");
 		//$el.closest("li").addClass("active");
 		$('ul.dropdown-menu [data-toggle=tab]').not($el).closest("li").removeClass("active");
 	});
+
+  */
 
 
 
@@ -356,18 +532,28 @@ $(document).ready(function() {
     }
     */
 
-  //multistep wallet login options- section click navigation
-  $("#wallet .login-container .multistep_progress_bar .callout").click(function () {
-    var goToStep = $(this).attr("data-multistep-wizard-step");
+function goToLoginOption(login_step = 1){
+    
+    if(login_step == 1){
+      $("#wallet .login-container #multistep-wizard-reset").click();
+      console.log('clicked!');
+      return ;
+    }
 
-    if(goToStep == 2)
+    console.log('login_step: '+ login_step);
+    history.pushState(null, null, '#wallet?login='+walletStateLogin.options[login_step]);
+    walletStateLogin.active = {"login_step": login_step, "login_option": walletStateLogin.options[login_step]};
+
+    if(login_step == 2)
       showRegularWallet();
-    if(goToStep == 3) {
+    if(login_step == 3) {
       showMultisigWallet();
-      goToStep = 2;
+      login_step = 2;
     }
     
-    var currentSection = $("#wallet .login-container section:nth-of-type(" + goToStep + ")");
+    
+
+    var currentSection = $("#wallet .login-container section:nth-of-type(" + login_step + ")");
     
     currentSection.removeClass('hide').fadeIn();
     currentSection.css("transform", "translateX(0)").fadeIn();
@@ -377,15 +563,25 @@ $(document).ready(function() {
     //$("#wallet .login-container section").not(currentSection).hide();
 
     //show back options for wallet login wizard
-    if(goToStep > 1)
+    if(login_step > 1)
       $('#multistep-wizard-reset').removeClass('hide').fadeIn();
     else
       $('#multistep-wizard-reset').addClass('hide').fadeOut();
+  }
+
+  //multistep wallet login options- section click navigation
+  $("#wallet .login-container .multistep_progress_bar .callout").click(function () {
+    var goToStep = parseInt($(this).attr("data-multistep-wizard-step"));
+    goToLoginOption(goToStep);
   });
+
+  
   
   //multistep wallet login - back button
-  $("#wallet .login-container #multistep-wizard-reset, .nav #wallet_options").click(function () {
+  $("#wallet .login-container #multistep-wizard-reset, .nav .wallet_options").click(function () {
     goToStep = 1;
+    walletStateLogin.active = {};
+    history.pushState(null, null, '#wallet');
 
     //reset imported_wallet data if users has imported a backup file!
     if (Object.keys(profile_data).indexOf('imported_wallet') !== -1){
@@ -430,6 +626,16 @@ $(document).ready(function() {
     
   });
   
+
+/* page load code by its hash*/
+getPageNavigateHash = getUrlHash();
+if ((Object.keys(getPageNavigateHash).indexOf('page') !== -1) && (Object.keys(getPageNavigateHash).indexOf('subpage') !== -1)) {
+  if (getPageNavigateHash.page == "#wallet"){
+    goToLoginOption(getPageNavigateHash.subpagenext);
+    console.log('_getLoginOption: ', getPageNavigateHash.subpagenext);
+  }
+}
+
 
 
   //multistep section click navigation
