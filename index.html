@@ -2736,9 +2736,6 @@
     }
   </style>
   <script type="module">
-    if (typeof navigator.serviceWorker !== 'undefined') {
-      navigator.serviceWorker.register('sw.js')
-    }
     //import 'https://cdn.jsdelivr.net/npm/@pwabuilder/pwaupdate'; const el = document.createElement('pwa-update'); document.body.appendChild(el);
     var lastTouchY = 0;
     var preventPullToRefresh = false;
@@ -2763,7 +2760,11 @@
     }, false);
   </script>
 
-
+<script>
+  if (typeof navigator.serviceWorker !== 'undefined') {
+    navigator.serviceWorker.register('sw.js')
+  }
+</script>
 </body>
 
 
