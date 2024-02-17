@@ -2727,10 +2727,41 @@
   
   <script type="text/javascript" src="assets/js/custom.js?v=1.14"></script>
   <script type="text/javascript" src="assets/js/pnotify.custom.min.js"></script>
+  <script type="text/javascript" src="./mainSW.js"></script>
+  <style type="text/css">
+    HTML {
+        overscroll-behavior: none;
+    }
+    BODY {
+        overscroll-behavior-y: contain;
+    }
+  </style>
   <script type="module">
-    import 'https://cdn.jsdelivr.net/npm/@pwabuilder/pwaupdate'; const el = document.createElement('pwa-update'); document.body.appendChild(el);
+    if (typeof navigator.serviceWorker !== 'undefined') {
+      navigator.serviceWorker.register('sw.js')
+    }
+    //import 'https://cdn.jsdelivr.net/npm/@pwabuilder/pwaupdate'; const el = document.createElement('pwa-update'); document.body.appendChild(el);
+    var lastTouchY = 0;
+    var preventPullToRefresh = false;
+    window.document.body.addEventListener("touchstart", function(e){
+        if (e.touches.length != 1) { return; }
+        lastTouchY = e.touches[0].clientY;
+        preventPullToRefresh = window.pageYOffset == 0;
+    }, false);
 
-
+    window.document.body.addEventListener("touchmove", function(e){
+        var touchY = e.touches[0].clientY;
+        var touchYDelta = touchY - lastTouchY;
+        lastTouchY = touchY;
+        if (preventPullToRefresh) {
+            // To suppress pull-to-refresh it is sufficient to preventDefault the first overscrolling touchmove.
+            preventPullToRefresh = false;
+            if (touchYDelta > 0) {
+                e.preventDefault();
+                return;
+            }
+        }
+    }, false);
   </script>
 
 
