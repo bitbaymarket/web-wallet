@@ -4,14 +4,14 @@
     "short_name": "BitBay",
     "description": "Secure web wallet",
     "orientation": "portrait",
-    "start_url": "/android/",
-    "scope": "/android/",
+    "start_url": "/",
+    "scope": "/",
     "display": "fullscreen",
     "background_color": "#53217c",
     "theme_color": "#000000",
     "icons": [
       {
-        "src": "/android/logo.png",
+        "src": "/logo.png",
         "sizes": "48x48 72x72 96x96 128x128 192x192 256x256 512x512",
         "type": "image/png"
       }
