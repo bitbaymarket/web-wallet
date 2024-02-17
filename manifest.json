@@ -1,26 +1,26 @@
 {
-  "author": "BitBay dev",
-  "name": "BitBay Wallet",
-  "short_name": "BitBay",
-  "description": "Secure web wallet",
-  "orientation": "portrait",
-  "start_url": "/",
-  "scope": "/",
-  "display": "fullscreen",
+    "author": "BitBay dev",
+    "name": "BitBay Wallet",
+    "short_name": "BitBay",
+    "description": "Secure web wallet",
+    "orientation": "portrait",
+    "start_url": "/web-wallet/",
+    "scope": "/web-wallet/",
+    "display": "fullscreen",
     "background_color": "#53217c",
     "theme_color": "#000000",
-  "icons": [
-    {
-      "src": "/logo.png",
-      "sizes": "48x48 72x72 96x96 128x128 192x192 256x256 512x512",
-      "type": "image/png"
+    "icons": [
+      {
+        "src": "/logo.png",
+        "sizes": "48x48 72x72 96x96 128x128 192x192 256x256 512x512",
+        "type": "image/png"
+      }
+    ],
+    "manifest_version": 2,
+    "version": "0.1",
+    "applications": {
+      "gecko": {
+        "id": "addon@example.com"
+      }
     }
-  ],
-  "manifest_version": 2,
-  "version": "0.1",
-  "applications": {
-    "gecko": {
-      "id": "addon@example.com"
-    }
-  }
 }

@@ -53,7 +53,7 @@
 	//coinjs.host = ('https:'==document.location.protocol?'https://bp1.bitbay.market/api':'http://bp1.bitbay.market/api');
 	//coinjs.host = ('https:'==document.location.protocol?'https://bp2.bitbay.market/api':'http://bp2.bitbay.market/api');
 	coinjs.host = 'https://bp2.bitbay.market/api';
-	coinjs.coin_data = {'latoken': 'https://api.latoken.com/v2/ticker', 'ratedb': 'https://raw.githubusercontent.com/bitbaymarket/ratedb/master/rates.json'};
+	coinjs.coin_data = {'ratedb': 'https://raw.githubusercontent.com/bitbaymarket/ratedb/master/rates.json'};
 
   //coinjs.coin_data = 'https://api.coingecko.com/api/v3/simple/price?ids=bitbay&vs_currencies=usd%2Cbtc&include_24hr_vol=true&include_24hr_change=true&include_last_updated_at=true';
 	
