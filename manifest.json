@@ -1,16 +1,14 @@
 {
-  "background_color": "#FFFFFF",
-  "description": "A Bitbay Wallet written in Javascript. Supports Multisig, Custom Transactions, nLockTime and more!",
-  "dir": "ltr",
-  "display": "standalone",
-  "name": "BitBay Mobile Wallet",
-  "orientation": "any",
-  "scope": "/",
-  "short_name": "BitBay Wallet",
+  "author": "BitBay dev",
+  "name": "BitBay Wallet",
+  "short_name": "BitBay",
+  "description": "Secure web wallet",
+  "orientation": "portrait",
   "start_url": "/",
-  "theme_color": "#ffffff",
-  "categories": [],
-  "screenshots": [],
+  "scope": "/",
+  "display": "fullscreen",
+    "background_color": "#53217c",
+    "theme_color": "#000000",
   "icons": [
     {
       "src": "/logo.png",
@@ -18,5 +16,11 @@
       "type": "image/png"
     }
   ],
-  "shortcuts": []
+  "manifest_version": 2,
+  "version": "0.1",
+  "applications": {
+    "gecko": {
+      "id": "addon@example.com"
+    }
+  }
 }
