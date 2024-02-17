@@ -2754,16 +2754,17 @@
         }
     }, false);
   </script>
+    <!--
   <script type="module">
     import './pwaupdate'; const el = document.createElement('pwa-update'); document.body.appendChild(el);
   </script>
-  <!--
+
   <script type="text/javascript" src="./mainSW.js"></script>
+  -->
   <script>
     if (typeof navigator.serviceWorker !== 'undefined') {
       navigator.serviceWorker.register('sw.js')
     }
-  </script>
-  -->
+  </script>  
 </body>
 </html>
