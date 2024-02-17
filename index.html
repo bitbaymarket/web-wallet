@@ -105,11 +105,6 @@
 </head>
 
 <body class="loggedout">
-  <script>
-    if (typeof navigator.serviceWorker !== 'undefined') {
-      navigator.serviceWorker.register('sw.js')
-    }
-  </script>
   <div id="wrap">
     <div id="header" class="navbar navbar-default navbar-fixed-top" role="navigation">
       <div class="container">
@@ -2727,8 +2722,7 @@
   </div>
   
   <script type="text/javascript" src="assets/js/custom.js?v=1.14"></script>
-  <script type="text/javascript" src="assets/js/pnotify.custom.min.js"></script>
-  <script type="text/javascript" src="./mainSW.js"></script>
+  <script type="text/javascript" src="assets/js/pnotify.custom.min.js"></script>  
   <style type="text/css">
     HTML {
         overscroll-behavior: none;
@@ -2763,5 +2757,13 @@
   <script type="module">
     import './pwaupdate'; const el = document.createElement('pwa-update'); document.body.appendChild(el);
   </script>
+  <!--
+  <script type="text/javascript" src="./mainSW.js"></script>
+  <script>
+    if (typeof navigator.serviceWorker !== 'undefined') {
+      navigator.serviceWorker.register('sw.js')
+    }
+  </script>
+  -->
 </body>
 </html>
