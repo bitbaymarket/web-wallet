@@ -2737,8 +2737,7 @@
         overscroll-behavior-y: contain;
     }
   </style>
-  <script type="module">
-    //import 'https://cdn.jsdelivr.net/npm/@pwabuilder/pwaupdate'; const el = document.createElement('pwa-update'); document.body.appendChild(el);
+  <script type="text/javascript">
     var lastTouchY = 0;
     var preventPullToRefresh = false;
     window.document.body.addEventListener("touchstart", function(e){
@@ -2760,6 +2759,9 @@
             }
         }
     }, false);
+  </script>
+  <script type="module">
+    import './pwaupdate'; const el = document.createElement('pwa-update'); document.body.appendChild(el);
   </script>
 </body>
 </html>
