@@ -1,0 +1,9 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "wallet.bitbay.market.twa",
+    "sha256_cert_fingerprints":
+    ["F6:0E:6B:68:E1:58:32:0F:81:D0:F6:E3:CB:AF:A8:C4:BF:00:AF:46:D7:4E:A4:52:51:AE:F9:FA:D8:6F:F8:79"]
+  }
+}]
