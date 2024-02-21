@@ -981,7 +981,9 @@ body.loggedin {
 fieldset[disabled] .form-control.can-copy {
   cursor: text;
 }		
-
+#walletSendConfirmStatus {
+  word-wrap: anywhere;
+}
 .walletSpendRadioButton {
     margin-right: 10px !important;
 }
