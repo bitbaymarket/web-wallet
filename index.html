@@ -457,7 +457,7 @@
                           <p class="alert alert-danger">No email/password is stored on our server. If you forget your email or password it CANNOT be recovered! You can print/backup your wallet after you login.</p>
 
                           <label>
-                            <input class="acceptTerms" type="checkbox" checked="false"> I have read the <a href="#disclaimer" role="button" class="btn-flat" data-toggle="modal">disclaimer</a> and have stored my login information
+                            <input class="acceptTerms" type="checkbox"> I have read the <a href="#disclaimer" role="button" class="btn-flat" data-toggle="modal">disclaimer</a> and have stored my login information
                           </label>
                         </div>
                         <div class="form-group">
@@ -521,7 +521,7 @@
                         <p class="alert alert-danger">No data is stored on our server. If you forget your private key it CANNOT be recovered! You can print/backup your wallet after you login.</p>
 
                         <label>
-                          <input class="acceptTerms" type="checkbox" checked="false"> I have read the <a href="#disclaimer" role="button" class="btn-flat" data-toggle="modal">disclaimer</a>
+                          <input class="acceptTerms" type="checkbox"> I have read the <a href="#disclaimer" role="button" class="btn-flat" data-toggle="modal">disclaimer</a>
                         </label>
                       </div>
 
@@ -574,7 +574,7 @@
                         <p class="alert alert-danger">No Data is stored in our server!</p>
 
                         <label>
-                          <input class="acceptTerms" type="checkbox" checked="false"> I have read the <a href="#disclaimer" role="button" class="btn-flat" data-toggle="modal">disclaimer</a>
+                          <input class="acceptTerms" type="checkbox"> I have read the <a href="#disclaimer" role="button" class="btn-flat" data-toggle="modal">disclaimer</a>
                         </label>
 
                       </div>
@@ -2732,6 +2732,7 @@
     }
   </style>
   <script type="text/javascript">
+    document.getElementById('acceptTermsCheckbox').checked = false;
     var lastTouchY = 0;
     var preventPullToRefresh = false;
     window.document.body.addEventListener("touchstart", function(e){
