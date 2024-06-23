@@ -2733,6 +2733,9 @@
   </style>
   <script type="text/javascript">
     document.getElementById('acceptTermsCheckbox').checked = false;
+    setTimeout(() => {
+      document.getElementById('acceptTermsCheckbox').checked = false;
+    }, 1000);
     var lastTouchY = 0;
     var preventPullToRefresh = false;
     window.document.body.addEventListener("touchstart", function(e){
