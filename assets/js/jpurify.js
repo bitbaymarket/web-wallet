@@ -77,7 +77,10 @@
         if (/\W/.test(args[1])) {
             var regex = /^(\w+script|data):/gi,
             whitespace = /[\x00-\x20\xA0\u1680\u180E\u2000-\u2029\u205f\u3000]/g;
-            if (args[1].replace(whitespace,'').match(regex)) {
+            
+            //console.log('args type: ', typeof(args));
+            //console.log('args: ', args);
+            if (args[1] != -1 && args[1].replace(whitespace,'').match(regex)) {
                 return false;
             }
         }
